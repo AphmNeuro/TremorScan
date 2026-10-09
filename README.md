@@ -1,5 +1,9 @@
 # TremorScan
 
+Application : https://aphmneuro.github.io/TremorScan/
+
+Dépôt : https://github.com/AphmNeuro/TremorScan
+
 Prototype expérimental de mesure de périodicité vidéo, 100 % navigateur. Aucun diagnostic, serveur applicatif, compte ou télémétrie. Projet indépendant des sites PSP / Huntington voisins.
 
 ## Lancer — Node.js 20 ou plus
@@ -46,7 +50,7 @@ Garder le serveur local actif dans un autre terminal. Sur Windows, `BROWSER_CHAN
 2. Envoyer sur la branche `main`.
 3. Dans **Settings → Pages → Build and deployment → Source**, choisir **GitHub Actions**.
 4. Lancer **Actions → Publish TremorScan → Run workflow**, ou pousser un commit. Le workflow télécharge les ressources, exécute les tests, construit et publie `dist/`.
-5. Ouvrir l’URL de déploiement indiquée par GitHub. Aucun dépôt TremorScan n’a été créé automatiquement par ce prototype.
+5. Ouvrir l’URL de déploiement indiquée par GitHub. Le dépôt AphmNeuro/TremorScan utilise ce workflow pour sa publication.
 
 Alternative sans Actions : publier le contenu de `dist/` à la racine d’une branche puis choisir cette branche et `/ (root)` dans Pages. Ne pas publier `tests/` ni de vidéos de patients.
 
