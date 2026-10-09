@@ -149,8 +149,8 @@
               <p id="progress-label" role="status"></p>
             </div>
             <p class="fine">
-              La lecture est ralentie pendant le calcul. Gardez cette page
-              ouverte ; l’analyse peut prendre quelques minutes.
+              La vitesse s’adapte à votre appareil. Gardez cette page ouverte
+              pendant le calcul ; une reprise plus lente peut être nécessaire.
               Après une première analyse, modifier la bande recalcule uniquement
               les spectres : les coordonnées sont réutilisées en mémoire.
             </p>
@@ -161,7 +161,7 @@
         <div class="section-head">
           <div>
             <p class="eyebrow">03 / RÉSULTATS</p>
-            <h2 id="results-title">Ce que le signal révèle</h2>
+            <h2 id="results-title">Votre résultat</h2>
           </div>
           <div class="exports">
             <button id="export-results" class="secondary">
@@ -169,7 +169,7 @@
             ><button id="export-data" class="secondary">
               Points anatomiques CSV ↓
             </button>
-            <button id="export-spectrum" class="secondary">Spectres CSV ↓</button>
+            
           </div>
         </div>
         <p class="notice">
@@ -178,7 +178,7 @@
           la main.
         </p>
         <div id="result-cards"></div>
-        <p id="sampling" class="fine"></p>
+        <p id="analysis-time" class="fine"></p><details><summary>Qualité de l’enregistrement</summary><p id="sampling" class="fine"></p></details>
         <p class="fine">
           Les points superposés à la vidéo correspondent à l’image analysée la
           plus proche (écart maximal de 0,1 s).
@@ -200,7 +200,7 @@
       </section>
     </main>
     <footer>
-      <span>TremorScan · v0.2</span
+      <span>TremorScan · v0.3</span
       ><a href="./docs/methodologie.html"
         >Comprendre les calculs et leurs limites</a
       >

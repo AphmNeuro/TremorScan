@@ -275,6 +275,9 @@ p {
 .analysis-controls p {
   font-size: 14px;
 }
+.frequency-values { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; }
+.frequency-values .frequency { font-size: clamp(32px, 7vw, 54px); }
+.frequency-plus { font-size: 26px; color: var(--muted); }
 .spectral-details { margin-top: 24px; border-top: 1px solid var(--line, #dfe8eb); padding-top: 20px; }
 .spectral-details summary { font-weight: 700; cursor: pointer; }
 .table-scroll { overflow-x: auto; margin: 20px 0; }

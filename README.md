@@ -28,18 +28,19 @@ Le dossier **dist/** contient le site statique complet, chemins relatifs compati
 
 Résultats réellement obtenus et essais non exécutés : [docs/resultats-tests.md](docs/resultats-tests.md).
 
-### Vue spectrale approfondie (v0.2)
+### Résultats simples (v0.3)
 
-Dans les résultats, ouvrir **Analyse spectrale approfondie** : spectrogramme,
-pics secondaires et relations harmoniques possibles, puissance/RMS dans la bande,
-entropie et dispersion temporelle. **Spectres CSV** exporte les PSD moyennes et
-par fenêtre du signal représentatif. Les limites et définitions sont dans la méthode.
-Changer la bande après une analyse réutilise les mêmes coordonnées en mémoire.
-La première détection reste à vitesse 0,25 ; aucune accélération sur iPhone n’est garantie.
+Une ou deux fréquences, un spectre, et les principaux indicateurs de suivi.
+Deux composantes exigent un consensus anatomique et une présence simultanée ;
+une harmonique possible est signalée. La vue approfondie a été retirée.
+La vitesse s’adapte au matériel ; plus de 2 % de pertes observées déclenche une
+reprise à 0,25×. Le gain dépend du navigateur, du téléphone et de la cadence vidéo.
+Le recalcul réutilise les coordonnées. Méthode et limites : `docs/methodologie.html`.
 
-Après génération de la vidéo de référence par le test E2E, `node tests/spectral-ui.mjs`
-vérifie l’affichage mobile, le recalcul, l’identité des coordonnées et les exports
-(Playwright avec Edge installé, ou `BROWSER_CHANNEL`).
+Après génération de la vidéo de référence par le test E2E,
+`node tests/spectral-ui.mjs` vérifie l’écran simplifié et les recalculs
+(Playwright/Edge). `node tests/dual-pacing.test.mjs` teste les deux fréquences et
+la régulation de vitesse. Le nom historique spectral-ui est conservé.
 
 ### Test vidéo navigateur (facultatif)
 
