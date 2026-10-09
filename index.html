@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#eff6f6" />
+    <meta
+      name="description"
+      content="Estimation expérimentale et locale de la fréquence d’un tremblement à partir d’une vidéo."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self'; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <title>TremorScan — Analyse vidéo</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./src/app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Aller au contenu</a>
+    <header>
+      <a class="brand" href="./"
+        ><span class="brand-icon" aria-hidden="true">∿</span>TremorScan<span
+          class="tag"
+          >Prototype</span
+        ></a
+      ><a href="./docs/methodologie.html">Méthode & limites ↗</a>
+    </header>
+    <main id="main">
+      <section class="intro">
+        <p class="eyebrow">OBSERVER LE MOUVEMENT</p>
+        <h1>Un mouvement.<br /><em>Une fréquence à explorer.</em></h1>
+        <p class="subtitle">Analyse vidéo de la fréquence des tremblements.</p>
+        <p class="local">
+          <span aria-hidden="true">◉</span> Votre vidéo reste sur cet appareil.
+        </p>
+      </section>
+      <section class="panel import-panel" aria-labelledby="start-title">
+        <div>
+          <p class="eyebrow">01 / VOTRE VIDÉO</p>
+          <h2 id="start-title">Commençons par une main.</h2>
+          <p>Filmez 10 à 20 secondes, avec la main entière bien visible.</p>
+        </div>
+        <div class="import-actions">
+          <button id="capture" class="primary">
+            Filmer une vidéo <span aria-hidden="true">↗</span></button
+          ><button id="import" class="secondary">Importer une vidéo</button
+          ><input
+            id="camera-file"
+            class="sr"
+            type="file"
+            accept="video/*"
+            capture="environment"
+            aria-label="Filmer une vidéo"
+          /><input
+            id="video-file"
+            class="sr"
+            type="file"
+            accept="video/*,.mov,.mp4,.webm"
+            aria-label="Importer une vidéo"
+          /><small>MP4, MOV ou WebM · selon les codecs du navigateur</small>
+        </div>
+      </section>
+      <ol class="instructions">
+        <li>
+          <span aria-hidden="true">▣</span>
+          <div>
+            <strong>Posez le téléphone</strong>
+            <p>Support fixe, sans zoom ni déplacement.</p>
+          </div>
+        </li>
+        <li>
+          <span aria-hidden="true">☀</span>
+          <div>
+            <strong>Éclairez la main</strong>
+            <p>Fond uni, doigts et poignet visibles.</p>
+          </div>
+        </li>
+        <li>
+          <span aria-hidden="true">◷</span>
+          <div>
+            <strong>Privilégiez 60 i/s</strong>
+            <p>Vidéo standard, sans ralenti ni montage.</p>
+          </div>
+        </li>
+      </ol>
+      <div id="message" role="status" aria-live="polite"></div>
+      <section id="workspace" class="panel" hidden>
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">02 / ANALYSE LOCALE</p>
+            <h2>Votre enregistrement</h2>
+            <p id="file-info"></p>
+          </div>
+          <button id="clear" class="text-button">Effacer la vidéo</button>
+        </div>
+        <div class="video-layout">
+          <div class="video-stage">
+            <video
+              id="video"
+              controls
+              playsinline
+              muted
+              preload="metadata"
+            ></video
+            ><canvas id="overlay" aria-hidden="true"></canvas>
+          </div>
+          <div class="analysis-controls">
+            <p>
+              Les mains et leurs 21 points anatomiques sont suivis
+              automatiquement.
+            </p>
+            <details>
+              <summary>Paramètres d’analyse</summary>
+              <div class="band">
+                <label
+                  >De (Hz)<input
+                    id="low"
+                    type="number"
+                    min="2"
+                    max="14"
+                    value="2"
+                    step="0.5" /></label
+                ><label
+                  >À (Hz)<input
+                    id="high"
+                    type="number"
+                    min="3"
+                    max="15"
+                    value="15"
+                    step="0.5"
+                /></label>
+              </div>
+              <p class="fine">
+                La bande est réduite si la cadence réellement analysée est
+                insuffisante. Les 30 premières secondes au maximum sont
+                traitées.
+              </p>
+            </details>
+            <button id="analyze" class="primary">Analyser la vidéo</button
+            ><button id="cancel" class="secondary" hidden>Annuler</button>
+            <div id="progress-box" hidden>
+              <progress
+                id="progress"
+                max="1"
+                value="0"
+                aria-label="Progression de l’analyse"
+              ></progress>
+              <p id="progress-label" role="status"></p>
+            </div>
+            <p class="fine">
+              La lecture est ralentie pendant le calcul. Gardez cette page
+              ouverte ; l’analyse peut prendre quelques minutes.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section id="results" hidden aria-labelledby="results-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">03 / RÉSULTATS</p>
+            <h2 id="results-title">Ce que le signal révèle</h2>
+          </div>
+          <div class="exports">
+            <button id="export-results" class="secondary">
+              Résultats CSV ↓</button
+            ><button id="export-data" class="secondary">
+              Points anatomiques CSV ↓
+            </button>
+          </div>
+        </div>
+        <p class="notice">
+          Mesure expérimentale — aucun diagnostic ne peut être établi à partir
+          de ce résultat. Un mouvement de caméra peut imiter un tremblement de
+          la main.
+        </p>
+        <div id="result-cards"></div>
+        <p id="sampling" class="fine"></p>
+        <p class="fine">
+          Les points superposés à la vidéo correspondent à l’image analysée la
+          plus proche (écart maximal de 0,1 s).
+        </p>
+      </section>
+      <section class="privacy">
+        <h2>Local, explicite, expérimental.</h2>
+        <p>
+          Aucune vidéo ni coordonnée anatomique n’est envoyée à un serveur.
+          Aucun compte, aucune télémétrie. Fermer ou effacer la vidéo libère les
+          données de la session ; seuls les exports que vous téléchargez restent
+          sur votre appareil.
+        </p>
+        <p>
+          Ce prototype n’est pas un dispositif médical diagnostique validé. Le
+          traitement local ne constitue pas une validation réglementaire pour un
+          usage clinique.
+        </p>
+      </section>
+    </main>
+    <footer>
+      <span>TremorScan · v0.1</span
+      ><a href="./docs/methodologie.html"
+        >Comprendre les calculs et leurs limites</a
+      >
+    </footer>
+  </body>
+</html>
