@@ -133,6 +133,27 @@
         physique en millimètres.
       </p>
       <h2>Confidentialité</h2>
+      <p>La vue approfondie décrit le signal représentatif : puissance intégrée
+        (somme PSD × largeur des bins), RMS dans la bande, entropie normalisée
+        (−Σ p log p / log N), dispersion P10–P90 des pics de fenêtres avec rapport
+        pic/fond ≥6. Ces mesures n’ont pas de seuil clinique et ne constituent pas
+        des intervalles de confiance. L’entropie dépend de la bande et de la grille
+        fréquentielle. La résolution physique reste celle des fenêtres de 4 s,
+        pas celle des bins interpolés par zero-padding.</p>
+      <p>Le spectrogramme utilise les mêmes fenêtres de Hann avec recouvrement
+        50 %, et une échelle de −40 à 0 dB relative au maximum des fenêtres dans
+        la bande. Les pics secondaires affichés ont au moins 10 % de la puissance
+        du pic dominant et un rapport pic/fond ≥6. Une fréquence proche de ×2,
+        ×3 ou ×4 du pic dominant, à max(0,2 Hz, résolution Welch), est signalée
+        comme compatible avec une harmonique, sans attribution causale.</p>
+      <p>Pour alléger le traitement, seul l’affichage des points est plafonné à
+        10 mises à jour par seconde et son canevas à 960 pixels. L’extraction des
+        images, leurs horodatages, les 21 points et les critères d’analyse sont
+        inchangés. Après une analyse terminée, les coordonnées restent en mémoire
+        jusqu’à l’effacement, au remplacement de la vidéo ou à la fermeture de la
+        page. Changer la bande réutilise ces mêmes coordonnées et évite de refaire
+        la détection. La première lecture reste à vitesse 0,25 pour limiter les
+        pertes d’images ; aucune accélération universelle sur iPhone n’est garantie.</p>
       <p>
         Les scripts, le modèle et les fichiers WebAssembly sont servis avec le
         site. La vidéo est ouverte via une URL locale temporaire ; les images et

@@ -10,4 +10,23 @@
 
 Captures, logs, CSV et vidéo synthétique sont disponibles localement dans `tests/artifacts/` et exclus du dépôt de production. Les petits pics secondaires ont ensuite été filtrés à 10 % de la puissance principale et rapport pic/fond ≥6 ; les tests numériques ont été relancés avec succès. Ce filtre ne change pas l’estimation principale.
 
-**Non testé :** Safari sur iPhone réel, caméra native iOS, véritables fichiers iPhone MOV/HEVC/120 i/s, vidéos cliniques, référence accélérométrique, déploiement distant dans un nouveau dépôt. La validation vidéo ci-dessus concerne un WebM synthétique ; elle ne mesure pas la justesse du modèle sur un tremblement réel. Aucun score de confiance clinique n’est revendiqué.
+## Mise à jour v0.2 — 9 octobre 2026
+
+- 38 tests numériques passent, dont la puissance/RMS d’une sinusoïde connue,
+  les relations harmoniques possibles, la dispersion d’un signal passant de 5 à
+  8 Hz, les limites de bande et l’export des spectres.
+- Test Edge à 390 × 844 : 698 images de la vidéo synthétique traitées, 5,0 Hz
+  pour les deux mains. Coordonnées CSV strictement identiques avant/après recalcul,
+  même fréquence, changement de bande 3–12 Hz effectif. Un seul chargement du
+  modèle. Recalcul mesuré à 253 ms sur ce poste (hors export) ; ce chiffre ne
+  prédit pas la performance sur iPhone ni celle de la première détection.
+- Spectrogramme, tableau des pics, exports CSV et absence de débordement mobile
+  contrôlés. Tests d’annulation, paramètres invalides et effacement passent.
+- Le correctif Safari précédent a été confirmé fonctionnel par l’utilisateur
+  sur son appareil. Cela ne couvre pas tous les modèles et versions d’iOS.
+
+**Non testé par les essais automatisés :** Safari sur iPhone réel, caméra native
+iOS, véritables fichiers iPhone MOV/HEVC/120 i/s, vidéos cliniques, référence
+accélérométrique. La validation vidéo concerne un WebM synthétique ; elle ne
+mesure pas la justesse du modèle sur un tremblement réel. Aucun score de confiance
+clinique n’est revendiqué.
