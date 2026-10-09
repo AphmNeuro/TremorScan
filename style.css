@@ -488,6 +488,9 @@ footer {
     gap: 14px;
     grid-template-columns: 1fr;
   }
+  .analysis-controls {
+    grid-row: 1;
+  }
   .instructions li {
     align-items: center;
   }
