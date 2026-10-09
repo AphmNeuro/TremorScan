@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Méthode et limites · TremorScan</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <main class="doc">
+      <a href="../">← Retour à TremorScan</a>
+      <p class="eyebrow">MÉTHODE · VERSION 0.1</p>
+      <h1>Une estimation explicite,<br />des limites visibles.</h1>
+      <p>
+        Le résultat décrit une périodicité des positions suivies dans l’image.
+        Il ne permet ni de diagnostiquer un tremblement, ni d’en déterminer la
+        cause. L’outil n’est pas validé pour guider une décision clinique.
+      </p>
+      <h2>Images et temps</h2>
+      <p>
+        MediaPipe Hand Landmarker 0.10.21 suit jusqu’à deux mains, avec 21
+        points par main. Le calcul s’effectue dans un worker. Les images sont
+        réduites à 640 pixels sur leur plus grand côté pour la détection ; les
+        coordonnées sont ensuite exprimées dans la résolution d’origine.
+      </p>
+      <p>
+        La vidéo est lue à un quart de sa vitesse pour laisser du temps au
+        calcul. Les temps utilisés sont les horodatages
+        <code>mediaTime</code> des images présentées, et non l’horloge du
+        calcul. Une image reçue pendant un calcul est ignorée. Cela réduit la
+        cadence effective et peut diminuer la bande analysable. Aucun FPS
+        nominal n’est inventé.
+      </p>
+      <p>
+        Le navigateur peut ne pas présenter toutes les images d’une vidéo à 120
+        i/s. Un MOV ou un HEVC n’est accepté que si le navigateur le décode. Les
+        vidéos ralenties ou montées doivent être évitées : leur temps de
+        présentation ne correspond pas nécessairement au temps du mouvement
+        original.
+      </p>
+      <h2>Suivi et signaux</h2>
+      <p>
+        Les mains sont associées par proximité du poignet d’une image à l’autre.
+        Un intervalle supérieur à 0,25 s crée un nouveau suivi. Les images où
+        les deux poignets sont très proches sont exclues. Une erreur d’identité
+        reste possible lors de croisements ou d’occlusions.
+      </p>
+      <p>
+        Pour chaque point, X et Y sont analysés séparément. Deux familles sont
+        conservées : positions dans l’image et positions après soustraction du
+        centre de la paume (moyenne des points 0, 5, 9, 13, 17). La première
+        conserve le mouvement de l’ensemble de la main ; la seconde explore les
+        mouvements relatifs. Aucune norme de déplacement n’est utilisée, pour
+        éviter le doublement artificiel de fréquence. La soustraction de la
+        paume ne corrige pas la caméra.
+      </p>
+      <h2>Échantillonnage et spectres</h2>
+      <p>
+        Les horodatages doivent être strictement croissants. Les coupures
+        supérieures au minimum entre 0,15 s et 2,6 intervalles médians séparent
+        le signal en segments. Seul le segment continu le plus long, d’au moins
+        6 secondes, est retenu. Les petites lacunes sont interpolées
+        linéairement. La cadence de reconstruction vaut l’inverse du 90e
+        percentile des intervalles observés, plafonné à 120 Hz.
+      </p>
+      <p>
+        La bande demandée est comprise entre 2 et 15 Hz. Sa borne haute est
+        limitée à 0,4 fois la cadence reconstruite, donc en dessous de Nyquist.
+        Cette marge ne garantit pas l’absence d’aliasing : une fréquence
+        au-dessus de Nyquist peut se replier dans la bande, et l’interpolation
+        n’est pas un filtre anti-repliement. Filmer à 60 i/s ou plus et
+        immobiliser la caméra reste essentiel.
+      </p>
+      <p>
+        La densité spectrale utilise Welch : segments de 4 secondes,
+        recouvrement 50 %, retrait d’une tendance linéaire par segment et
+        fenêtre de Hann périodique. La FFT radix-2 est complétée par des zéros
+        et normalisée en pixels²/Hz. La résolution physique est proche de 0,25
+        Hz ; les zéros supplémentaires affinent seulement la grille. Une
+        interpolation parabolique du logarithme de puissance affine la position
+        d’un pic.
+      </p>
+      <h2>Consensus et fiabilité qualitative</h2>
+      <p>
+        Un signal est candidat si son pic dépasse huit fois la médiane spectrale
+        de la bande, contient au moins 35 % de la puissance de bande dans ±0,5
+        Hz, possède au moins 65 % de fenêtres concordantes à ±0,5 Hz et une
+        couverture de suivi d’au moins 75 %. Les signaux quasi constants (RMS
+        après retrait linéaire inférieur à 0,05 pixel) sont exclus. Ces seuils
+        sont des choix d’ingénierie, non des seuils médicaux.
+      </p>
+      <p>
+        Dans chaque famille, six groupes anatomiques (poignet et cinq doigts)
+        disposent chacun d’un vote. On retient par groupe le signal maximisant
+        stabilité × couverture × rapport pic/fond (plafonné à 30) ×
+        concentration spectrale. Il faut au moins trois groupes concordants à
+        ±0,5 Hz et 70 % des groupes candidats. La fréquence retenue est la
+        médiane du groupe majoritaire. Une opposition entre familles, ou des
+        pics secondaires presque aussi puissants (plus de 65 % du principal)
+        dans la majorité des votes, rend l’estimation incertaine.
+      </p>
+      <ul>
+        <li>
+          <strong>Cohérente :</strong> accord ≥85 %, couverture ≥90 %, stabilité
+          ≥85 %, moins de 8 % de valeurs reconstruites sur des intervalles
+          élargis et irrégularité faible.
+        </li>
+        <li>
+          <strong>À interpréter avec prudence :</strong> consensus minimal
+          présent, mais critères précédents incomplets.
+        </li>
+        <li>
+          <strong>Incertaine ou indéterminée :</strong> aucun chiffre unique
+          n’est annoncé.
+        </li>
+      </ul>
+      <p>
+        Les points voisins ne sont pas des mesures indépendantes. Ces
+        indicateurs ne constituent ni une probabilité de justesse, ni un
+        intervalle de confiance statistique. La stabilité indique la proportion
+        des fenêtres dont le pic reste à ±0,5 Hz du pic moyen avec un rapport
+        pic/fond ≥6.
+      </p>
+      <h2>Ce que le prototype ne sait pas résoudre</h2>
+      <p>
+        Mouvements de caméra, flou, compression, rolling shutter, changement
+        d’échelle, stabilisation de l’iPhone et erreurs du modèle peuvent
+        produire ou masquer une oscillation. Une oscillation commune à la main
+        entière peut être un mouvement de caméra. Les harmoniques sont affichées
+        comme pics secondaires ; le logiciel ne prétend pas identifier
+        automatiquement leur fondamentale. La bande ne couvre pas les mouvements
+        lents inférieurs à 2 Hz. L’amplitude en pixels n’est pas une mesure
+        physique en millimètres.
+      </p>
+      <h2>Confidentialité</h2>
+      <p>
+        Les scripts, le modèle et les fichiers WebAssembly sont servis avec le
+        site. La vidéo est ouverte via une URL locale temporaire ; les images et
+        coordonnées restent en mémoire. Aucun compte, stockage persistant,
+        service d’analyse ou envoi réseau applicatif n’est utilisé. L’hébergeur
+        reçoit les requêtes ordinaires de chargement de la page, jamais la
+        vidéo. Le traitement local ne constitue pas à lui seul une validation
+        réglementaire.
+      </p>
+      <h2>Validation nécessaire avant tout usage clinique</h2>
+      <p>
+        Les tests synthétiques évaluent les calculs numériques. Une image de
+        mains animée teste le décodage et MediaPipe, mais pas les performances
+        sur de vrais tremblements. Un protocole de comparaison à un
+        accéléromètre est fourni dans le projet. La compatibilité complète
+        Safari iPhone exige un essai sur un appareil réel.
+      </p>
+      <h2>Références techniques</h2>
+      <ul>
+        <li>
+          <a
+            href="https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker/web_js"
+            >MediaPipe : Hand Landmarker Web</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement/requestVideoFrameCallback"
+            >Horodatages requestVideoFrameCallback</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html"
+            >Définition de la densité spectrale de Welch</a
+          >
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>
