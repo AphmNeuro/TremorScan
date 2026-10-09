@@ -29,6 +29,9 @@ function locked(on) {
 }
 const session = new VideoSession(video, $("overlay"), (p) => {
   $("progress").value = p.progress;
+  message(p.phase === "spectrum"
+    ? "Calcul de la fréquence en cours…"
+    : `Analyse en cours : ${p.count} images traitées. Gardez cette page ouverte.`);
   $("progress-label").textContent =
     p.phase === "spectrum"
       ? "Calcul des spectres et recherche d’un consensus…"
@@ -57,8 +60,9 @@ async function load(file) {
     message(
       m.duration > 30
         ? "Seules les 30 premières secondes seront analysées."
-        : "Vidéo prête. Vous pouvez lancer l’analyse.",
+        : "Vidéo prête. Appuyez sur « Analyser la vidéo » : le bouton lecture sert uniquement à revoir l’enregistrement.",
     );
+    $("workspace").scrollIntoView({ block: "start" });
   } catch (e) {
     session.dispose();
     $("workspace").hidden = true;
@@ -100,6 +104,7 @@ $("analyze").onclick = async () => {
   try {
     data = await session.analyze([low, high]);
     render();
+    $("results").scrollIntoView({ block: "start" });
     message(
       data.results.some((r) => r.frequency !== null)
         ? "Analyse terminée. Consultez les limites avec votre résultat."
@@ -108,6 +113,7 @@ $("analyze").onclick = async () => {
     );
   } catch (e) {
     message(e.message, true);
+    $("message").scrollIntoView({ block: "start" });
   } finally {
     locked(false);
   }

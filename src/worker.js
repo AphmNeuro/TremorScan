@@ -4,10 +4,20 @@ let detector;
 self.onmessage = async ({ data }) => {
   try {
     if (data.type === "init") {
+      if (typeof OffscreenCanvas === "undefined") {
+        throw Error("Le traitement nécessite OffscreenCanvas. Mettez iOS et Safari à jour, puis réessayez.");
+      }
+      // Supply the canvas explicitly: MediaPipe's Safari user-agent heuristic
+      // can otherwise fall back to document.createElement inside this worker.
+      const canvas = new OffscreenCanvas(1, 1);
+      if (!canvas.getContext("webgl2")) {
+        throw Error("Le traitement graphique local n’est pas disponible. Essayez Safari à jour ou un ordinateur.");
+      }
       const files = await FilesetResolver.forVisionTasks(
         new URL("../vendor/wasm/", import.meta.url).href,
       );
       detector = await HandLandmarker.createFromOptions(files, {
+        canvas,
         baseOptions: {
           modelAssetPath: new URL(
             "../vendor/hand_landmarker.task",

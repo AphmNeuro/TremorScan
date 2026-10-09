@@ -54,6 +54,8 @@ export class VideoSession {
   }
   async analyze(band) {
     const v = this.video;
+    // Stop a user-started preview while the detector loads.
+    v.pause();
     if (!v.requestVideoFrameCallback)
       throw Error(
         "Ce navigateur ne fournit pas les horodatages des images. Mettez Safari ou votre navigateur à jour.",
