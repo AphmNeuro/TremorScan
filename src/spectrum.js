@@ -17,6 +17,7 @@ export function detrend(a) {
   const slope = xx ? xy / xx : 0;
   return a.map((v, i) => v - m - slope * (i - c));
 }
+const twiddles = new Map();
 export function fft(re, im) {
   const n = re.length;
   if (n < 2 || n & (n - 1)) throw Error("FFT power of two required");
@@ -31,10 +32,15 @@ export function fft(re, im) {
   }
   for (let len = 2; len <= n; len *= 2) {
     const a = (-2 * Math.PI) / len;
+    if (!twiddles.has(len)) {
+      twiddles.set(len, Array.from({length: len / 2}, (_, j) => [Math.cos(a * j), Math.sin(a * j)]));
+      if (twiddles.size > 16) twiddles.delete(twiddles.keys().next().value);
+    }
+    const factors = twiddles.get(len);
     for (let i = 0; i < n; i += len) {
       for (let j = 0; j < len / 2; j++) {
-        const c = Math.cos(a * j),
-          s = Math.sin(a * j),
+        const c = factors[j][0],
+          s = factors[j][1],
           k = i + j,
           l = k + len / 2,
           tr = c * re[l] - s * im[l],

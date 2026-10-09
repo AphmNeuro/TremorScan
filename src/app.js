@@ -1,12 +1,13 @@
 import { VideoSession } from "./video.js";
-import { overlay, plot } from "./charts.js";
-import { download, resultCSV, timeCSV } from "./export.js";
+import { overlay, plot, spectrogram } from "./charts.js";
+import { download, resultCSV, timeCSV, spectrumCSV } from "./export.js";
 import { quantile, detrend } from "./spectrum.js";
 const $ = (id) => document.getElementById(id);
 let data = null,
   loading = false,
   disposers = [];
 const video = $("video");
+let lastPaint = 0;
 function message(text, error = false) {
   $("message").textContent = text;
   $("message").className = text ? (error ? "error" : "success") : "";
@@ -28,9 +29,13 @@ function locked(on) {
   $("progress-box").hidden = !on;
 }
 const session = new VideoSession(video, $("overlay"), (p) => {
+  // Rendering is throttled, never landmark extraction or signal sampling.
+  const now = performance.now();
+  if (p.phase !== "spectrum" && p.progress < 1 && now - lastPaint < 100) return;
+  lastPaint = now;
   $("progress").value = p.progress;
   message(p.phase === "spectrum"
-    ? "Calcul de la fréquence en cours…"
+    ? (p.reused ? "Recalcul du spectre à partir des mêmes coordonnées…" : "Calcul de la fréquence en cours…")
     : `Analyse en cours : ${p.count} images traitées. Gardez cette page ouverte.`);
   $("progress-label").textContent =
     p.phase === "spectrum"
@@ -243,6 +248,42 @@ function render() {
           ),
         );
       card.append(charts);
+      const d = a.details;
+      if (d) {
+        const advanced = node("details", undefined, "spectral-details");
+        advanced.append(node("summary", "Analyse spectrale approfondie"));
+        advanced.append(node("p", "Ces graphiques décrivent le signal illustré ci-dessus. Le résultat principal reste fondé sur le consensus entre groupes anatomiques.", "fine"));
+        const measures = node("dl", undefined, "metrics");
+        for (const [label, value] of [
+          ["Puissance dans la bande", `${d.bandPower.toPrecision(3)} pixels²`],
+          ["Déplacement RMS dans la bande", `${d.bandRms.toPrecision(3)} pixels`],
+          ["Entropie spectrale normalisée", d.entropy === null ? "—" : d.entropy.toFixed(3)],
+          ["Fréquence médiane des fenêtres", d.medianHz === null ? "—" : `${d.medianHz.toFixed(2)} Hz`],
+          ["Dispersion temporelle P10–P90", d.p10Hz === null ? "—" : `${d.p10Hz.toFixed(2)}–${d.p90Hz.toFixed(2)} Hz`],
+          ["Fenêtres avec pic émergent", `${d.usableWindows} / ${d.totalWindows}`],
+        ]) { const item = node("div"); item.append(node("dt", label), node("dd", value)); measures.append(item); }
+        advanced.append(measures, node("p", `Fenêtres de ${d.windowSeconds.toFixed(1)} s, recouvrement 50 %. P10–P90 décrit la variabilité des pics de fenêtres avec rapport pic/fond ≥ 6 ; ce n’est pas un intervalle de confiance. L’entropie décrit l’étalement de la puissance entre les bins de cette bande, sans seuil clinique. Elle dépend des paramètres du spectre.`, "fine"));
+        const tableBox = node("div", undefined, "table-scroll");
+        const table = node("table"); table.append(node("caption", "Pics du signal représentatif"));
+        const head = node("thead"), row = node("tr");
+        for (const title of ["Fréquence", "Niveau relatif", "Pic / fond", "Relation au pic dominant"]) { const th = node("th", title); th.scope = "col"; row.append(th); }
+        head.append(row); table.append(head);
+        const body = node("tbody");
+        for (const p of d.peaks) {
+          const tr = node("tr");
+          for (const text of [`${p.frequency.toFixed(2)} Hz`, `${p.relativeDb.toFixed(1)} dB`, `${p.peakToFloorDb.toFixed(1)} dB`, p.harmonic ? `Compatible avec ×${p.harmonic}` : Math.abs(p.frequency - a.peak.frequency) < 0.01 ? "Pic dominant" : "Pic secondaire"])
+            tr.append(node("td", text));
+          body.append(tr);
+        }
+        table.append(body); tableBox.append(table); advanced.append(tableBox);
+        advanced.append(node("p", `Pics retenus : puissance ≥ 10 % du pic dominant et rapport pic/fond ≥ 6. Le fond est la médiane de la densité spectrale dans la bande, pas une mesure indépendante du bruit. Une relation ×2, ×3 ou ×4 à ±${d.toleranceHz.toFixed(2)} Hz est seulement compatible avec une harmonique : elle ne prouve ni une fondamentale ni une origine physiologique. Les relations hors bande ne sont pas évaluées.`, "fine"));
+        const heat = node("div", undefined, "chart");
+        const heatCanvas = node("canvas"); heatCanvas.setAttribute("role", "img"); heatCanvas.setAttribute("aria-label", "Spectrogramme du signal représentatif");
+        heat.append(node("h3", "Spectrogramme"), heatCanvas, node("p", "Touchez le spectrogramme pour lire une valeur. Les couleurs expriment la puissance relative au maximum de toutes les fenêtres."));
+        advanced.append(heat);
+        jobs.push(() => disposers.push(spectrogram(heatCanvas, a)));
+        card.append(advanced);
+      }
       container.append(card);
       jobs.forEach((f) => f());
     } else {
@@ -259,11 +300,14 @@ function render() {
   const dt = data.meta.times.slice(1).map((t, i) => t - data.meta.times[i]);
   $("sampling").textContent =
     `${data.meta.count} images traitées · cadence médiane observée ${dt.length ? (1 / quantile(dt, 0.5)).toFixed(1) : "—"} images/s · ${data.meta.skipped} callbacks non traités pendant un calcul. La cadence originale du fichier n’est pas déduite de celle du traitement. ${data.meta.ambiguous} image(s) exclue(s) pour proximité ambiguë des mains.`;
+  $("sampling").textContent += ` Calcul effectué en ${data.meta.elapsedSeconds?.toFixed(1) || "—"} s${data.meta.reusedTracking ? " · coordonnées réutilisées sans nouvelle détection" : ""}.`;
 }
 $("export-results").onclick = () =>
   data && download(resultCSV(data), "tremorscan-resultats.csv");
 $("export-data").onclick = () =>
   data && download(timeCSV(data), "tremorscan-points.csv");
+$("export-spectrum").onclick = () =>
+  data && download(spectrumCSV(data), "tremorscan-spectres.csv");
 let replayId;
 function replay() {
   if (!loading) {

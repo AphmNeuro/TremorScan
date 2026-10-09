@@ -56,6 +56,8 @@ export class VideoSession {
     const v = this.video;
     // Stop a user-started preview while the detector loads.
     v.pause();
+    if (this.cached) return this.reanalyze(band);
+    const started = performance.now();
     if (!v.requestVideoFrameCallback)
       throw Error(
         "Ce navigateur ne fournit pas les horodatages des images. Mettez Safari ou votre navigateur à jour.",
@@ -221,6 +223,8 @@ export class VideoSession {
           finished = true;
           cleanup();
           const meta = {
+            elapsedSeconds: (performance.now() - started) / 1000,
+            reusedTracking: false,
             times: this.times,
             count: this.processed,
             skipped: this.skipped,
@@ -231,12 +235,13 @@ export class VideoSession {
           };
           this.worker.terminate();
           this.worker = null;
-          resolve({
+          this.cached = {
             results: data.results,
             tracks: this.tracker.tracks,
             frames: this.frames,
             meta,
-          });
+          };
+          resolve(this.cached);
         }
       };
       this.worker.onerror = () =>
@@ -296,6 +301,33 @@ export class VideoSession {
     this.worker?.terminate();
     this.worker = null;
   }
+  reanalyze(band) {
+    const source = this.cached;
+    this.cancelled = false;
+    const started = performance.now();
+    this.worker = new Worker(new URL("./worker-bootstrap.js", import.meta.url));
+    this.onProgress({ phase: "spectrum", progress: 1, reused: true });
+    return new Promise((resolve, reject) => {
+      const cleanup = () => {
+        clearTimeout(timer);
+        this.worker?.terminate();
+        this.worker = null;
+        this.abort = null;
+      };
+      const fail = error => { cleanup(); reject(error); };
+      const timer = setTimeout(() => fail(Error("Calcul spectral interrompu. Réessayez.")), 30000);
+      this.abort = () => fail(Error("Analyse annulée."));
+      this.worker.onerror = () => fail(Error("Le calcul spectral a échoué."));
+      this.worker.onmessage = ({data}) => {
+        if (data.type === "error") return fail(Error(data.message));
+        if (data.type !== "results") return;
+        cleanup();
+        this.cached = { ...source, results: data.results, meta: { ...source.meta, reusedTracking: true, elapsedSeconds: (performance.now() - started) / 1000 } };
+        resolve(this.cached);
+      };
+      this.worker.postMessage({type: "analyze", tracks: source.tracks, width: source.meta.width, height: source.meta.height, band, count: source.meta.count});
+    });
+  }
   dispose() {
     this.cancel();
     this.video.pause();
@@ -304,6 +336,7 @@ export class VideoSession {
     if (this.url) URL.revokeObjectURL(this.url);
     this.url = null;
     this.frames = [];
+    this.cached = null;
     this.tracker = null;
   }
 }

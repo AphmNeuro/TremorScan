@@ -48,11 +48,12 @@ export function resultCSV(data) {
       "band_high_hz",
       "welch_resolution_hz",
       "stable_window_fraction",
+      "band_power_px2", "band_rms_px", "spectral_entropy", "window_p10_hz", "window_p90_hz", "elapsed_s", "reused_tracking",
     ],
     ...data.results.map((r) => {
       const a = r.representative?.result;
       return [
-        "0.1.0",
+        "0.2.0",
         r.id,
         r.frequency,
         r.reliability,
@@ -67,9 +68,25 @@ export function resultCSV(data) {
         a?.band[1],
         a?.spec.resolution,
         a?.stable,
+        a?.details?.bandPower, a?.details?.bandRms, a?.details?.entropy,
+        a?.details?.p10Hz, a?.details?.p90Hz, data.meta?.elapsedSeconds, data.meta?.reusedTracking,
       ];
     }),
   ]);
+}
+export function spectrumCSV(data) {
+  const rows = [["hand_id", "point", "axis", "component", "spectrum_type", "window_center_s", "frequency_hz", "psd_px2_per_hz", "band_low_hz", "band_high_hz", "resolution_hz"]];
+  for (const r of data.results) {
+    const c = r.representative, a = c?.result;
+    if (!a) continue;
+    for (const w of [{time: null, power: a.spec.power}, ...a.spec.windows]) {
+      a.spec.freq.forEach((f, i) => {
+        if (f < a.band[0] || f > a.band[1]) return;
+        rows.push([r.id, c.point, c.axis, c.family, w.time === null ? "welch_mean" : "window", w.time === null ? "" : a.grid.start + w.time, f, w.power[i], ...a.band, a.spec.resolution]);
+      });
+    }
+  }
+  return csv(rows);
 }
 export function download(text, name) {
   const url = URL.createObjectURL(

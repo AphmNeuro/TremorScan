@@ -1,5 +1,6 @@
 import { welch, peaks, quantile, detrend, mean } from "./spectrum.js";
 import { extractSignals } from "./tracking.js";
+import { spectralDetails } from "./spectral-details.js";
 export function regularize(samples) {
   const valid = samples.filter(
     (p) => Number.isFinite(p.t) && Number.isFinite(p.v),
@@ -237,6 +238,9 @@ export function analyzeTracks(tracks, width, height, band, processedCount) {
         result: analyzeSignal(c.samples, band),
       }));
       const result = aggregate(channels);
+      if (result.representative) {
+        result.representative.result.details = spectralDetails(result.representative.result);
+      }
       return {
         ...result,
         id: track.id,
