@@ -16,7 +16,7 @@ self.onmessage = async ({ data }) => {
       const files = await FilesetResolver.forVisionTasks(
         new URL("../vendor/wasm/", import.meta.url).href,
       );
-      detector = await HandLandmarker.createFromOptions(files, {
+      const options = {
         canvas,
         baseOptions: {
           modelAssetPath: new URL(
@@ -30,8 +30,9 @@ self.onmessage = async ({ data }) => {
         minHandDetectionConfidence: 0.6,
         minHandPresenceConfidence: 0.6,
         minTrackingConfidence: 0.6,
-      });
-      self.postMessage({ type: "ready" });
+      };
+      detector = await HandLandmarker.createFromOptions(files, options);
+      self.postMessage({ type: "ready", backend: options.baseOptions.delegate });
     } else if (data.type === "frame") {
       try {
         const result = detector.detectForVideo(data.bitmap, data.time * 1000);

@@ -1,4 +1,5 @@
 import { HandTracker } from "./tracking.js";
+import { PlaybackPacer, needsSlowerPass } from "./pacing.js";
 export class VideoSession {
   constructor(video, canvas, onProgress) {
     this.video = video;
@@ -53,6 +54,25 @@ export class VideoSession {
     return { width: v.videoWidth, height: v.videoHeight, duration: v.duration };
   }
   async analyze(band) {
+    this.video.pause();
+    if (this.cached) return this.reanalyze(band);
+    const started = performance.now();
+    let result = await this.runPass(band, true);
+    const firstPass = {...result.meta, times: undefined};
+    if (needsSlowerPass(result.meta)) {
+      if (this.cancelled) throw Error("Analyse annulée.");
+      this.cached = null;
+      this.onProgress({phase: "retry", progress: 0, count: 0});
+      result = await this.runPass(band, false);
+      result.meta.retried = true;
+      result.meta.firstPass = firstPass;
+    }
+    result.meta.elapsedSeconds = (performance.now() - started) / 1000;
+    result.meta.samplingWarning = needsSlowerPass(result.meta);
+    this.cached = result;
+    return result;
+  }
+  async runPass(band, adaptive) {
     const v = this.video;
     // Stop a user-started preview while the detector loads.
     v.pause();
@@ -72,6 +92,7 @@ export class VideoSession {
     this.times = [];
     this.processed = 0;
     this.skipped = 0;
+    this.missedCallbacks = 0;
     this.end = Math.min(v.duration, 30);
     this.worker = new Worker(new URL("./worker-bootstrap.js", import.meta.url));
     const ready = new Promise((resolve, reject) => {
@@ -90,7 +111,7 @@ export class VideoSession {
       );
       this.worker.onmessage = ({ data }) => {
         clearTimeout(timeout);
-        if (data.type === "ready") resolve();
+        if (data.type === "ready") { this.backend = data.backend; resolve(); }
         else if (data.type === "error") reject(Error(data.message));
       };
       this.worker.onerror = () => {
@@ -119,13 +140,17 @@ export class VideoSession {
     canvas.height = Math.round(v.videoHeight * scale);
     const ctx = canvas.getContext("2d", { alpha: false });
     v.currentTime = 0;
-    v.playbackRate = 0.25;
+    const pacer = new PlaybackPacer();
+    v.playbackRate = adaptive ? pacer.rate : 0.25;
     v.controls = false;
-    let busy = false,
+    let busy = 0,
       last = -1,
       finished = false,
       stopped = false,
       callback;
+    let frameStarted = 0, previousTime = null, presented = null, overloaded = false;
+    let maximumRate = v.playbackRate;
+    let sendQueue = Promise.resolve();
     return new Promise((resolve, reject) => {
       const cleanup = () => {
         clearTimeout(stall);
@@ -206,11 +231,19 @@ export class VideoSession {
           return;
         }
         if (data.type === "frame") {
-          busy = false;
+          busy--;
+          const firstFrame = this.processed === 0;
+          if (adaptive && !firstFrame) {
+            v.playbackRate = pacer.completed(performance.now() - frameStarted);
+            maximumRate = Math.max(maximumRate, v.playbackRate);
+          }
           this.processed++;
           this.times.push(data.time);
           const hands = this.tracker.add(data.time, data.hands);
           this.frames.push({ time: data.time, hands });
+          // A bounded pipeline avoids stop/start for every frame. Resume when
+          // the detector has drained the queue; never retain more than 3 bitmaps.
+          if ((adaptive && busy <= 1 && v.paused) || firstFrame) v.play().catch(() => fail(Error("Lecture interrompue. Relancez l’analyse.")));
           this.onProgress({
             phase: "tracking",
             progress: data.time / this.end,
@@ -225,6 +258,9 @@ export class VideoSession {
           const meta = {
             elapsedSeconds: (performance.now() - started) / 1000,
             reusedTracking: false,
+            missedCallbacks: this.missedCallbacks,
+            maximumRate,
+            backend: this.backend,
             times: this.times,
             count: this.processed,
             skipped: this.skipped,
@@ -254,28 +290,44 @@ export class VideoSession {
         kick();
         callback = v.requestVideoFrameCallback(frame);
         const t = metadata.mediaTime;
+        if (previousTime !== null) pacer.observeStep(t - previousTime);
+        previousTime = t;
+        if (presented !== null && metadata.presentedFrames > presented + 1) {
+          this.missedCallbacks += metadata.presentedFrames - presented - 1;
+          if (adaptive) v.playbackRate = pacer.overload();
+        }
+        presented = metadata.presentedFrames;
         if (t >= this.end) {
           finish();
           return;
         }
         if (t <= last) return;
-        if (busy) {
+        if (busy >= (adaptive ? 3 : 1)) {
           this.skipped++;
+          if (adaptive && !overloaded) { v.playbackRate = pacer.overload(); overloaded = true; }
           return;
         }
         last = t;
-        busy = true;
+        busy++;
+        overloaded = false;
+        if ((adaptive && busy >= 3) || this.processed === 0) v.pause();
+        frameStarted = performance.now();
         try {
           ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-          const bitmap = await createImageBitmap(canvas);
-          if (this.cancelled || finished || stopped) {
-            bitmap.close();
-            busy = false;
-            return;
-          }
-          this.worker.postMessage({ type: "frame", bitmap, time: t }, [bitmap]);
+          const prepared = createImageBitmap(canvas).then(bitmap => ({bitmap}), error => ({error}));
+          const send = sendQueue.then(async () => {
+            const item = await prepared;
+            if (item.error) throw item.error;
+            const bitmap = item.bitmap;
+            if (this.cancelled || finished || stopped) {
+              bitmap.close(); busy--; return;
+            }
+            this.worker.postMessage({ type: "frame", bitmap, time: t }, [bitmap]);
+          });
+          sendQueue = send.catch(() => {});
+          await send;
         } catch (e) {
-          busy = false;
+          busy--;
           fail(
             Error(
               "Impossible de décoder les images de cette vidéo : " + e.message,

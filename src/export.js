@@ -48,12 +48,12 @@ export function resultCSV(data) {
       "band_high_hz",
       "welch_resolution_hz",
       "stable_window_fraction",
-      "band_power_px2", "band_rms_px", "spectral_entropy", "window_p10_hz", "window_p90_hz", "elapsed_s", "reused_tracking",
+      "frequency_1_hz", "frequency_2_hz", "possible_harmonic", "elapsed_s", "reused_tracking", "sampling_warning", "backend", "maximum_playback_rate", "retried", "first_pass_s", "first_pass_processed", "first_pass_lost",
     ],
     ...data.results.map((r) => {
       const a = r.representative?.result;
       return [
-        "0.2.0",
+        "0.3.0",
         r.id,
         r.frequency,
         r.reliability,
@@ -67,9 +67,12 @@ export function resultCSV(data) {
         a?.band[0],
         a?.band[1],
         a?.spec.resolution,
-        a?.stable,
-        a?.details?.bandPower, a?.details?.bandRms, a?.details?.entropy,
-        a?.details?.p10Hz, a?.details?.p90Hz, data.meta?.elapsedSeconds, data.meta?.reusedTracking,
+        r.frequencies?.length === 2 ? a?.pairStability : a?.stable,
+        r.frequencies?.[0] ?? r.frequency, r.frequencies?.[1], r.harmonic,
+        data.meta?.elapsedSeconds, data.meta?.reusedTracking, data.meta?.samplingWarning,
+        data.meta?.backend, data.meta?.maximumRate, data.meta?.retried || false,
+        data.meta?.firstPass?.elapsedSeconds, data.meta?.firstPass?.count,
+        data.meta?.firstPass ? data.meta.firstPass.skipped + data.meta.firstPass.missedCallbacks : null,
       ];
     }),
   ]);

@@ -1,6 +1,5 @@
 import { welch, peaks, quantile, detrend, mean } from "./spectrum.js";
 import { extractSignals } from "./tracking.js";
-import { spectralDetails } from "./spectral-details.js";
 export function regularize(samples) {
   const valid = samples.filter(
     (p) => Number.isFinite(p.t) && Number.isFinite(p.v),
@@ -67,10 +66,16 @@ export function analyzeSignal(samples, band = [2, 15]) {
   const peak = found[0];
   const rms = Math.sqrt(mean(detrend(grid.values).map((x) => x * x)));
   if (!peak || rms < 0.05) return null;
-  const timeline = spec.windows.map((w) => ({
-    time: grid.start + w.time,
-    peak: peaks({ ...spec, power: w.power }, low, high)[0],
-  }));
+  const timeline = spec.windows.map((w) => {
+    const windowPeaks = peaks({ ...spec, power: w.power }, low, high);
+    return { time: grid.start + w.time, peak: windowPeaks[0], peaks: windowPeaks };
+  });
+  const matches = (w, p) => w.peaks.some(q => Math.abs(q.frequency - p.frequency) <= 0.4 && q.snr >= 6 && q.power >= (w.peak?.power || 0) * 0.2);
+  const strong = found.filter(p => p.snr >= 8 && p.power >= peak.power * 0.25 && p.concentration >= 0.15);
+  const pairStability = strong.length === 2 ? timeline.filter(w => strong.every(p => matches(w, p))).length / timeline.length : 0;
+  const pair = strong.length === 2 && Math.abs(strong[0].frequency - strong[1].frequency) >= 1 && grid.coverage >= 0.85
+    && pairStability >= 0.65
+    ? strong.slice().sort((a,b) => a.frequency - b.frequency) : null;
   const stable =
     timeline.filter(
       (w) =>
@@ -108,10 +113,14 @@ export function analyzeSignal(samples, band = [2, 15]) {
     competing,
     band: [low, high],
     rms,
+    pair,
+    pairStability,
   };
 }
 // One equal vote per anatomical group: axes and correlated landmarks cannot multiply a vote.
 export function aggregate(channels) {
+  const double = aggregatePair(channels);
+  if (double) return double;
   const usable = channels.filter((c) => c.result?.periodic);
   if (!usable.length)
     return {
@@ -211,7 +220,7 @@ export function aggregate(channels) {
         : "À interpréter avec prudence",
     reason: ambiguous
       ? "Pics concurrents ou désaccord entre groupes anatomiques / composantes."
-      : "Consensus entre au moins trois groupes anatomiques ; indicateur qualitatif non calibré.",
+      : "Fréquence retrouvée sur plusieurs groupes anatomiques.",
     support: best.support,
     points,
     family: best.family,
@@ -222,6 +231,47 @@ export function aggregate(channels) {
       frequency: f.f,
       groups: f.members.length,
     })),
+  };
+}
+function aggregatePair(channels) {
+  const options = [];
+  for (const family of ["global", "relative"]) {
+    const available = channels.filter(c => c.family === family && c.result);
+    const total = new Set(available.map(c => c.group)).size;
+    const paired = available.filter(c => c.result.pair);
+    for (const seed of paired) {
+      const agree = paired.filter(c => c.result.pair.every((p, i) => Math.abs(p.frequency - seed.result.pair[i].frequency) <= 0.4));
+      const groups = new Set(agree.map(c => c.group)).size;
+      if (groups < 3 || groups / total < 0.7) continue;
+      // One vote per group, with stable deterministic tie-breaking.
+      const votes = [...new Set(agree.map(c => c.group))].sort().map(g => agree.filter(c => c.group === g).sort((a,b) => quality(b.result) - quality(a.result) || a.point - b.point || a.axis.localeCompare(b.axis))[0]);
+      const frequencies = [0,1].map(i => quantile(votes.map(c => c.result.pair[i].frequency), 0.5));
+      options.push({family, frequencies, groups, support: groups / total, agree, votes});
+    }
+  }
+  options.sort((a,b) => b.groups - a.groups || b.support - a.support || a.family.localeCompare(b.family) || a.frequencies[0] - b.frequencies[0]);
+  if (!options.length) return null;
+  const best = options[0];
+  // Do not let a weaker relative component replace an equally supported raw
+  // single-frequency result. Subtracting the palm can magnify tracking artefacts.
+  if (best.family === "relative") {
+    const raw = channels.filter(c => c.family === "global" && c.result?.periodic && !c.result.pair);
+    const coherent = raw.filter(c => best.frequencies.some(f => Math.abs(f-c.result.peak.frequency)<=0.4));
+    if (new Set(coherent.map(c=>c.group)).size >= best.groups) return null;
+  }
+  const conflict = options.some(o => o.frequencies.some((f,i) => Math.abs(f - best.frequencies[i]) > 0.5));
+  const other = channels.filter(c => c.family !== best.family && c.result?.periodic && best.frequencies.every(f => Math.abs(c.result.peak.frequency-f)>0.5));
+  if (conflict || new Set(other.map(c=>c.group)).size >= 3) return {frequency:null, frequencies:[], reliability:"Incertaine", reason:"Les composantes ne concordent pas entre les points suivis.", support:0, points:0};
+  const representative = [...best.votes].sort((a,b) => quality(b.result)-quality(a.result) || a.point-b.point || a.axis.localeCompare(b.axis))[0];
+  const ratio = best.frequencies[1] / best.frequencies[0];
+  const multiple = Math.round(ratio);
+  const harmonic = multiple >= 2 && multiple <= 4 && Math.abs(best.frequencies[1] - multiple * best.frequencies[0]) <= Math.max(0.2, representative.result.spec.resolution);
+  return {
+    frequency: null, frequencies: best.frequencies,
+    reliability: "Deux composantes concordantes",
+    reason: harmonic ? "Deux fréquences présentes ensemble. La plus élevée peut être une harmonique de la première." : "Deux fréquences présentes ensemble et retrouvées sur plusieurs groupes anatomiques.",
+    support: best.support, points: new Set(best.agree.map(c=>c.point)).size,
+    family: best.family, groups: best.groups, representative, harmonic,
   };
 }
 function quality(r) {
@@ -238,11 +288,9 @@ export function analyzeTracks(tracks, width, height, band, processedCount) {
         result: analyzeSignal(c.samples, band),
       }));
       const result = aggregate(channels);
-      if (result.representative) {
-        result.representative.result.details = spectralDetails(result.representative.result);
-      }
       return {
         ...result,
+        frequencies: result.frequencies || (result.frequency === null ? [] : [result.frequency]),
         id: track.id,
         tracking: track.frames.length / Math.max(1, processedCount),
         observedDuration: track.frames.at(-1).time - track.frames[0].time,
