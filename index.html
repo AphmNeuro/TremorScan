@@ -151,6 +151,8 @@
             <p class="fine">
               La lecture est ralentie pendant le calcul. Gardez cette page
               ouverte ; l’analyse peut prendre quelques minutes.
+              Après une première analyse, modifier la bande recalcule uniquement
+              les spectres : les coordonnées sont réutilisées en mémoire.
             </p>
           </div>
         </div>
@@ -167,6 +169,7 @@
             ><button id="export-data" class="secondary">
               Points anatomiques CSV ↓
             </button>
+            <button id="export-spectrum" class="secondary">Spectres CSV ↓</button>
           </div>
         </div>
         <p class="notice">
@@ -197,7 +200,7 @@
       </section>
     </main>
     <footer>
-      <span>TremorScan · v0.1</span
+      <span>TremorScan · v0.2</span
       ><a href="./docs/methodologie.html"
         >Comprendre les calculs et leurs limites</a
       >

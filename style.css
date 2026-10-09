@@ -275,6 +275,12 @@ p {
 .analysis-controls p {
   font-size: 14px;
 }
+.spectral-details { margin-top: 24px; border-top: 1px solid var(--line, #dfe8eb); padding-top: 20px; }
+.spectral-details summary { font-weight: 700; cursor: pointer; }
+.table-scroll { overflow-x: auto; margin: 20px 0; }
+.table-scroll table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table-scroll caption { text-align: left; font-weight: 700; padding-bottom: 12px; }
+.table-scroll th, .table-scroll td { padding: 12px; text-align: left; border-bottom: 1px solid #dfe8eb; }
 .fine {
   font-size: 12px !important;
   color: var(--muted);

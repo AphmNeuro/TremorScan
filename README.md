@@ -28,6 +28,19 @@ Le dossier **dist/** contient le site statique complet, chemins relatifs compati
 
 Résultats réellement obtenus et essais non exécutés : [docs/resultats-tests.md](docs/resultats-tests.md).
 
+### Vue spectrale approfondie (v0.2)
+
+Dans les résultats, ouvrir **Analyse spectrale approfondie** : spectrogramme,
+pics secondaires et relations harmoniques possibles, puissance/RMS dans la bande,
+entropie et dispersion temporelle. **Spectres CSV** exporte les PSD moyennes et
+par fenêtre du signal représentatif. Les limites et définitions sont dans la méthode.
+Changer la bande après une analyse réutilise les mêmes coordonnées en mémoire.
+La première détection reste à vitesse 0,25 ; aucune accélération sur iPhone n’est garantie.
+
+Après génération de la vidéo de référence par le test E2E, `node tests/spectral-ui.mjs`
+vérifie l’affichage mobile, le recalcul, l’identité des coordonnées et les exports
+(Playwright avec Edge installé, ou `BROWSER_CHANNEL`).
+
 ### Test vidéo navigateur (facultatif)
 
 ```sh
