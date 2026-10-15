@@ -7,7 +7,7 @@ const browser = await chromium.launch({ headless: true, channel: process.env.BRO
 try {
   const context = await browser.newContext({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 Version/16.6 Mobile/15E148 Safari/604.1' });
   const page = await context.newPage();
-  await page.goto('http://127.0.0.1:4180/dist/');
+  await page.goto((process.env.TEST_URL || 'http://127.0.0.1:4180/dist/'));
   const initialize = () => page.evaluate(() => new Promise((resolve, reject) => {
     const worker = new Worker('./src/worker-bootstrap.js');
     const timer = setTimeout(() => { worker.terminate(); reject(Error('Worker timeout')); }, 60000);

@@ -55,7 +55,7 @@ test('Synthetic tracked coordinates preserve both frequencies and export them',(
   const frames=samples(t=>sine(5,t)+sine(8,t)).map(p=>({time:p.t,landmarks:Array.from({length:21},(_,i)=>({x:.3+i*.002+p.v/1000,y:.4+i*.003,z:0}))}));
   const r=analyzeTracks([{id:1,frames}],1000,500,[2,15],frames.length)[0];
   assert.equal(r.frequencies.length,2);
-  const csv=resultCSV({results:[r],meta:{}});assert.match(csv,/frequency_2_hz/);assert.match(csv,/0.3.0/);
+  const csv=resultCSV({results:[r],meta:{}});assert.match(csv,/frequency_2_hz/);assert.match(csv,/0.4.0/);
 });
 test('Pacing speeds up when processing keeps up and caps callback demand',()=>{
   const p=new PlaybackPacer();for(let i=0;i<100;i++){p.observeStep(1/60);p.completed(5);}
