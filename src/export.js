@@ -49,12 +49,12 @@ export function resultCSV(data) {
       "band_high_hz",
       "welch_resolution_hz",
       "stable_window_fraction",
-      "frequency_1_hz", "frequency_2_hz", "possible_harmonic", "elapsed_s", "reused_tracking", "sampling_warning", "backend", "maximum_playback_rate", "retried", "first_pass_s", "first_pass_processed", "first_pass_lost", "mode", "region",
+      "frequency_1_hz", "frequency_2_hz", "possible_harmonic", "elapsed_s", "reused_tracking", "sampling_warning", "backend", "maximum_playback_rate", "retried", "first_pass_s", "first_pass_processed", "first_pass_lost", "mode", "region", "measurement", "point_ids",
     ],
     ...data.results.map((r) => {
       const a = r.representative?.result;
       return [
-        "0.4.0",
+        "0.4.1",
         r.id,
         r.frequency,
         r.reliability,
@@ -74,7 +74,7 @@ export function resultCSV(data) {
         data.meta?.backend, data.meta?.maximumRate, data.meta?.retried || false,
         data.meta?.firstPass?.elapsedSeconds, data.meta?.firstPass?.count,
         data.meta?.firstPass ? data.meta.firstPass.skipped + data.meta.firstPass.missedCallbacks : null,
-        data.meta.mode || "hand", r.region || "",
+        data.meta.mode || "hand", r.region || "", r.representative?.measurement, r.representative?.pointIds?.join(";"),
       ];
     }),
   ]);

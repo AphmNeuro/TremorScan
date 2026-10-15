@@ -1,21 +1,23 @@
 // Original MediaPipe landmark IDs; only these coordinates are retained.
 export const REGIONS = [
-  {key:'upper-lip', label:'Lèvre supérieure', groups:[[40,39],[0,13],[269,270]]},
-  {key:'lower-lip', label:'Lèvre inférieure', groups:[[91,181],[17,14],[405,321]]},
-  {key:'right-brow', label:'Sourcil droit', groups:[[70,46],[105,52],[107,55]]},
-  {key:'left-brow', label:'Sourcil gauche', groups:[[300,276],[334,282],[336,285]]},
-  {key:'forehead', label:'Front', groups:[[54,68],[10,151],[284,298]]},
-  {key:'right-eye', label:'Paupières droites', groups:[[161,163],[159,145],[157,154]]},
-  {key:'left-eye', label:'Paupières gauches', groups:[[384,381],[386,374],[388,390]]},
-  {key:'right-cheek', label:'Joue droite', groups:[[50,101],[205,206],[117,118]]},
-  {key:'left-cheek', label:'Joue gauche', groups:[[280,330],[425,426],[346,347]]},
-  {key:'chin', label:'Menton / bas du visage', groups:[[170,169],[152,175],[395,396]]},
-  {key:'nose', label:'Nez', groups:[[48,49],[1,2],[278,279]]},
+  {key:'upper-lip', label:'Lèvre supérieure', groups:[[40,39,37,185],[0,13,82,312],[269,270,267,409]]},
+  {key:'lower-lip', label:'Lèvre inférieure', groups:[[91,181,84,146],[17,14,87,317],[405,321,314,375]]},
+  {key:'right-brow', label:'Sourcil droit', groups:[[70,46,63,53],[105,52,66,65],[107,55]], gaps:[[46,161],[52,159],[55,157]], gapLabel:'Hauteur sourcil–paupière'},
+  {key:'left-brow', label:'Sourcil gauche', groups:[[300,276,293,283],[334,282,296,295],[336,285]], gaps:[[276,388],[282,386],[285,384]], gapLabel:'Hauteur sourcil–paupière'},
+  {key:'forehead', label:'Front', groups:[[54,68,67,69],[10,151,9,8],[284,298,297,299]]},
+  {key:'right-eye', label:'Paupières droites', groups:[[161,163,160,144],[159,145,158,153],[157,154,173,155]], gaps:[[161,163],[159,145],[157,154]], gapLabel:'Ouverture de la paupière'},
+  {key:'left-eye', label:'Paupières gauches', groups:[[384,381,398,382],[386,374,385,380],[388,390,387,373]], gaps:[[384,381],[386,374],[388,390]], gapLabel:'Ouverture de la paupière'},
+  {key:'right-cheek', label:'Joue droite', groups:[[50,101,100,36],[205,206,207,187],[117,118,119,123]]},
+  {key:'left-cheek', label:'Joue gauche', groups:[[280,330,329,266],[425,426,427,411],[346,347,348,352]]},
+  {key:'chin', label:'Menton / bas du visage', groups:[[170,169,171,140],[152,175,199,200],[395,396,394,369]]},
+  {key:'nose', label:'Nez', groups:[[48,49,64,98],[1,2,4,5],[278,279,294,327]]},
+  {key:'mouth-opening',label:'Ouverture de la bouche',groups:[[82,87],[13,14],[312,317]],gaps:[[82,87],[13,14],[312,317]],gapLabel:'Écart vertical entre les lèvres',onlyGaps:true},
+  {key:'mouth-width',label:'Largeur de la bouche',groups:[[61,291],[78,308],[95,324]],gaps:[[61,291],[78,308],[95,324]],gapAxis:'x',gapLabel:'Écart horizontal entre les commissures',onlyGaps:true},
 ];
 export const GLOBAL_REGION={key:'head',label:'Mouvement global du visage',groups:[[33],[263],[168,6]]};
 const ANCHORS = [33,263,168,6];
 export const FACE_IDS = [...new Set([...ANCHORS,...REGIONS.flatMap(r=>r.groups.flat())])];
-export const FACE_CONNECTIONS = REGIONS.flatMap(r=>r.groups.map(g=>g.map(id=>FACE_IDS.indexOf(id))));
+export const FACE_CONNECTIONS = REGIONS.flatMap(r=>r.groups.flatMap(g=>g.slice(1).map((id,i)=>[FACE_IDS.indexOf(g[i]),FACE_IDS.indexOf(id)])));
 export const compactFace = landmarks => FACE_IDS.map(id=>landmarks[id]);
 const valid = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
 export class FaceTracker {
@@ -55,8 +57,15 @@ export function stabilizedFrames(frames,width,height){
   });
 }
 export function faceSignals(frames,region){
-  return region.groups.flatMap((ids,group)=>ids.flatMap(id=>['x','y'].map(axis=>({
-    family:'relative',point:id,axis,group,
+  const coordinates=region.onlyGaps?[]:region.groups.flatMap((ids,group)=>ids.flatMap(id=>['x','y'].map(axis=>({
+    family:'relative',point:id,pointIds:[id],axis,group,measurement:'Déplacement '+axis+' du point '+id,
     samples:frames.map(f=>({t:f.time,v:f.landmarks?.[FACE_IDS.indexOf(id)]?.[axis]??null})),
   }))));
+  // Signed separations preserve the oscillation's direction; a radial norm
+  // around a reference point could turn f into 2f when crossing zero.
+  const axis=region.gapAxis||'y';
+  const gaps=(region.gaps||[]).map(([a,b],group)=>({family:'relative',point:a,pointIds:[a,b],axis:'gap-'+axis,group,measurement:region.gapLabel,
+    samples:frames.map(f=>{const p=f.landmarks?.[FACE_IDS.indexOf(a)],q=f.landmarks?.[FACE_IDS.indexOf(b)];return {t:f.time,v:p&&q?q[axis]-p[axis]:null};}),
+  }));
+  return [...coordinates,...gaps];
 }

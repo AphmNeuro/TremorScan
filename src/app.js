@@ -49,11 +49,12 @@ for(const mode of ['hand','face']) $('mode-'+mode).onclick=()=>{
   session.setMode(mode);resetResults();$('workspace').hidden=true;message('');
   for(const m of ['hand','face']){const b=$('mode-'+m);b.setAttribute('aria-pressed',String(m===mode));b.className=m===mode?'primary':'secondary';}
   const face=mode==='face';
+  $('low').min=face?'0.5':'2';$('low').value=face?'0.5':'2';$('high').value='15';
   $('start-title').textContent=face?'Commençons par un visage.':'Commençons par une main.';
   $('capture-hint').textContent=face?'Filmez 10 à 20 secondes, visage de face, sans parler, avec le mouvement que vous souhaitez observer.':'Filmez 10 à 20 secondes, avec la main entière bien visible.';
   $('lighting-title').textContent=face?'Éclairez le visage':'Éclairez la main';
   $('lighting-hint').textContent=face?'Un seul visage de face, sans zone masquée.':'Fond uni, doigts et poignet visibles.';
-  $('tracking-hint').textContent=face?'Les différentes régions du visage et son mouvement global sont suivis automatiquement. Une fréquence est recherchée dans chaque région, entre 2 et 15 Hz. Les mouvements plus lents ou irréguliers peuvent rester non déterminés.':'Les mains et leurs 21 points anatomiques sont suivis automatiquement.';
+  $('tracking-hint').textContent=face?'Les différentes régions du visage et son mouvement global sont suivis automatiquement. Une fréquence est recherchée dans chaque région, entre 0,5 et 15 Hz, avec mesure des ouvertures des yeux et de la bouche et des écarts sourcil–paupière. Pour les mouvements lents, filmez plutôt 20 secondes.':'Les mains et leurs 21 points anatomiques sont suivis automatiquement.';
 };
 function resetResults() {
   data = null;
@@ -106,9 +107,10 @@ $("cancel").onclick = () => session.cancel();
 $("analyze").onclick = async () => {
   const low = Number($("low").value),
     high = Number($("high").value);
-  if (!(low >= 2 && high <= 15 && high - low >= 1)) {
+  const minimum=session.mode==='face'?0.5:2;
+  if (!(low >= minimum && high <= 15 && high - low >= 1)) {
     message(
-      "Choisissez une bande comprise entre 2 et 15 Hz, large d’au moins 1 Hz.",
+      `Choisissez une bande comprise entre ${minimum} et 15 Hz, large d’au moins 1 Hz.`,
       true,
     );
     return;
@@ -160,7 +162,7 @@ function render() {
     shown=data.results.filter(r=>r.frequencies?.length);
     const absent=data.results.filter(r=>!r.frequencies?.length);
     if(!shown.length)container.append(node('p','Aucune périodicité suffisamment stable retrouvée entre '+$('low').value+' et '+$('high').value+' Hz. Cela ne signifie pas une absence de mouvement.','notice'));
-    if(absent.length){const details=node('details');details.append(node('summary','Régions sans fréquence déterminée ('+absent.length+')'),node('p',absent.map(r=>r.label+' · visage '+r.id+' : '+r.reason).join(' '),'fine'));container.append(details);}
+    if(absent.length){const details=node('details');details.append(node('summary','Régions sans fréquence indépendante ('+absent.length+')'),node('p',absent.map(r=>r.label+' · visage '+r.id+' : '+r.reason).join(' '),'fine'));container.append(details);}
     container.append(node('p','Le mouvement global peut inclure celui de la caméra. Les fréquences locales sont calculées après correction du mouvement de tête dans le plan de l’image. Un mouvement volontaire ou un clignement régulier peut aussi être périodique.','fine'));
   }
   for (const r of shown) {
@@ -181,6 +183,7 @@ function render() {
     card.append(hero, node("p", r.reason, "fine"));
     if (frequencies.length === 2) card.append(node("p", "Deux pics ne prouvent pas l’existence de deux tremblements distincts.", "fine"));
     const a = r.representative?.result;
+    if(r.representative?.measurement)card.append(node("p", "Mesure : "+r.representative.measurement+".", "fine"));
     if (a) {
       const metrics = node("dl", undefined, "metrics");
       for (const [label, value] of [
@@ -198,7 +201,7 @@ function render() {
       motion.append(node("summary", "Voir le mouvement au cours du temps"));
       const motionBox = node("div", undefined, "chart");
       mc.setAttribute("role", "img"); mc.setAttribute("aria-label", "Déplacement au cours du temps");
-      motionBox.append(mc, node("p", "Déplacement du point représentatif, en pixels."));
+      motionBox.append(mc, node("p", (r.representative.measurement || "Déplacement du point représentatif")+", en pixels."));
       motion.append(motionBox); card.append(motion);
       container.append(card);
       const ids = a.spec.freq.map((f,i) => f >= a.band[0] && f <= a.band[1] ? i : -1).filter(i=>i>=0);
