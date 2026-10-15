@@ -9,7 +9,7 @@
   <body>
     <main class="doc">
       <a href="../">← Retour à TremorScan</a>
-      <p class="eyebrow">MÉTHODE · VERSION 0.1</p>
+      <p class="eyebrow">MÉTHODE · VERSION 0.3</p>
       <h1>Une estimation explicite,<br />des limites visibles.</h1>
       <p>
         Le résultat décrit une périodicité des positions suivies dans l’image.
@@ -19,17 +19,23 @@
       <h2>Images et temps</h2>
       <p>
         MediaPipe Hand Landmarker 0.10.21 suit jusqu’à deux mains, avec 21
-        points par main. Le calcul s’effectue dans un worker. Les images sont
+        points par main. Le calcul s’effectue dans un worker, sur CPU. Les images sont
         réduites à 640 pixels sur leur plus grand côté pour la détection ; les
         coordonnées sont ensuite exprimées dans la résolution d’origine.
       </p>
       <p>
-        La vidéo est lue à un quart de sa vitesse pour laisser du temps au
-        calcul. Les temps utilisés sont les horodatages
-        <code>mediaTime</code> des images présentées, et non l’horloge du
-        calcul. Une image reçue pendant un calcul est ignorée. Cela réduit la
-        cadence effective et peut diminuer la bande analysable. Aucun FPS
-        nominal n’est inventé.
+        Une file limitée à trois images alimente le détecteur dans l’ordre
+        des horodatages. La vidéo est mise en pause si cette file est pleine,
+        puis reprend lorsqu’il ne reste au plus qu’une image en attente.
+        La première inférence est aussi effectuée en pause. La vitesse démarre à 0,5× et s’adapte aux
+        intervalles observés (0,125× à 2×, demande de présentation limitée à 30/s).
+        Une surcharge réduit la vitesse ; une remontée devient possible après
+        douze images sans nouvelle surcharge. Au-delà de 2 % de pertes observées
+        (callbacks reçus pendant un calcul ou sauts du compteur presentedFrames),
+        une reprise continue à 0,25× vérifie la mesure. Les pertes persistantes
+        sont signalées. Le navigateur peut omettre des images sans callback :
+        ce contrôle ne certifie pas l’exhaustivité du fichier. Les horodatages
+        utilisés restent mediaTime, indépendamment des pauses et de la vitesse.
       </p>
       <p>
         Le navigateur peut ne pas présenter toutes les images d’une vidéo à 120
@@ -97,7 +103,7 @@
         ±0,5 Hz et 70 % des groupes candidats. La fréquence retenue est la
         médiane du groupe majoritaire. Une opposition entre familles, ou des
         pics secondaires presque aussi puissants (plus de 65 % du principal)
-        dans la majorité des votes, rend l’estimation incertaine.
+        dans la majorité des votes, rend l’estimation incertaine sauf si les critères de deux composantes ci-dessous sont satisfaits.
       </p>
       <ul>
         <li>
@@ -121,6 +127,21 @@
         des fenêtres dont le pic reste à ±0,5 Hz du pic moyen avec un rapport
         pic/fond ≥6.
       </p>
+      <h2>Deux fréquences dans un même signal</h2>
+      <p>Deux pics doivent être séparés d’au moins 1 Hz. Chacun doit dépasser
+        huit fois la médiane spectrale, atteindre 25 % de la puissance du pic
+        dominant et concentrer 15 % de la puissance dans ±0,5 Hz. Ils doivent
+        apparaître ensemble dans au moins 65 % des fenêtres, avec des fréquences
+        à ±0,4 Hz, un rapport pic/fond ≥6 et une puissance ≥20 % du pic de fenêtre.
+        La couverture du signal doit être ≥85 %. Le même couple doit être retrouvé
+        dans au moins trois groupes anatomiques et 70 % des groupes exploitables
+        d’une même famille. Un vote par groupe ; médiane des fréquences de ces votes.
+        Les couples contradictoires restent incertains. Un signal global à fréquence unique aussi largement confirmé garde la priorité sur un couple seulement présent après soustraction de la paume. Des oscillations successives
+        ou des doigts discordants ne suffisent pas à annoncer deux composantes.</p>
+      <p>Deux fréquences ne prouvent pas deux tremblements distincts. Une relation
+        ×2, ×3 ou ×4 à max(0,2 Hz, résolution Welch) est signalée comme harmonique
+        possible. La seconde fréquence peut aussi provenir d’un artefact. Ces
+        critères sont des choix d’ingénierie, sans validation clinique.</p>
       <h2>Ce que le prototype ne sait pas résoudre</h2>
       <p>
         Mouvements de caméra, flou, compression, rolling shutter, changement
@@ -133,27 +154,9 @@
         physique en millimètres.
       </p>
       <h2>Confidentialité</h2>
-      <p>La vue approfondie décrit le signal représentatif : puissance intégrée
-        (somme PSD × largeur des bins), RMS dans la bande, entropie normalisée
-        (−Σ p log p / log N), dispersion P10–P90 des pics de fenêtres avec rapport
-        pic/fond ≥6. Ces mesures n’ont pas de seuil clinique et ne constituent pas
-        des intervalles de confiance. L’entropie dépend de la bande et de la grille
-        fréquentielle. La résolution physique reste celle des fenêtres de 4 s,
-        pas celle des bins interpolés par zero-padding.</p>
-      <p>Le spectrogramme utilise les mêmes fenêtres de Hann avec recouvrement
-        50 %, et une échelle de −40 à 0 dB relative au maximum des fenêtres dans
-        la bande. Les pics secondaires affichés ont au moins 10 % de la puissance
-        du pic dominant et un rapport pic/fond ≥6. Une fréquence proche de ×2,
-        ×3 ou ×4 du pic dominant, à max(0,2 Hz, résolution Welch), est signalée
-        comme compatible avec une harmonique, sans attribution causale.</p>
-      <p>Pour alléger le traitement, seul l’affichage des points est plafonné à
-        10 mises à jour par seconde et son canevas à 960 pixels. L’extraction des
-        images, leurs horodatages, les 21 points et les critères d’analyse sont
-        inchangés. Après une analyse terminée, les coordonnées restent en mémoire
-        jusqu’à l’effacement, au remplacement de la vidéo ou à la fermeture de la
-        page. Changer la bande réutilise ces mêmes coordonnées et évite de refaire
-        la détection. La première lecture reste à vitesse 0,25 pour limiter les
-        pertes d’images ; aucune accélération universelle sur iPhone n’est garantie.</p>
+      <p>L’affichage est allégé sans réduire le nombre de points suivis. Les
+        coordonnées sont réutilisées en mémoire pour les recalculs ; effacer,
+        remplacer la vidéo ou quitter la page les libère.</p>
       <p>
         Les scripts, le modèle et les fichiers WebAssembly sont servis avec le
         site. La vidéo est ouverte via une URL locale temporaire ; les images et
@@ -192,6 +195,14 @@
           >
         </li>
       </ul>
-    </main>
+    <h2>Mode Visage — aperçu v0.4</h2>
+<p>Le mode Visage recherche une périodicité dans onze régions : lèvres supérieure et inférieure, sourcils, paupières, joues, front, nez et menton. Un résultat distinct concerne le mouvement global. Ce n’est pas une classification de tremblements : parole, mimique, clignements ou mouvements volontaires peuvent aussi produire des pics.</p>
+<p>MediaPipe Face Landmarker float16 v1 détecte le visage, avec numFaces=2 pour éviter le lissage temporel du mode à un seul visage. Les images contenant plusieurs visages sont exclues. Seuls les points nécessaires sont conservés et exportés avec leurs identifiants MediaPipe d’origine. Les côtés désignent ceux du sujet dans une image non miroir ; une vidéo miroir inverse cette interprétation.</p>
+<p>Les régions locales utilisent une correction de translation, rotation et échelle dans le plan de l’image, ajustée sur les coins externes des yeux et deux points du haut du nez (33, 263, 168, 6). Les images dont l’ajustement est trop déformé sont exclues (erreur RMS supérieure à 3 % de la distance entre coins des yeux, facteur d’échelle hors 0,7–1,4). Le mouvement global utilise les coordonnées non corrigées. Les rotations hors du plan, les déplacements de caméra et les erreurs corrélées du modèle restent des sources d’erreur.</p>
+<p>Chaque région exige un accord entre ses trois sous-régions et au moins 75 % d’images exploitables, puis les mêmes critères spectraux et de stabilité que le mode Main. Ces seuils sont heuristiques, sans confiance statistique calibrée ; les points du modèle ne sont pas des mesures indépendantes. La bande reste 2–15 Hz, limitée par l’échantillonnage. « Non déterminée » peut signifier mouvement lent, irrégulier, trop faible ou suivi insuffisant. Aucun diagnostic ni amplitude physique n’est fourni.</p>
+<p>Si une fréquence locale est à moins de 0,6 Hz d’une fréquence globale retenue, le résultat local est laissé indéterminé : les erreurs du suivi peuvent suivre le mouvement d’ensemble. Cette règle peut aussi masquer un véritable mouvement local synchrone ; elle privilégie une conclusion prudente.</p>
+<p>Les tests de coordonnées synthétiques ne valident pas la sensibilité aux petites oscillations faciales sur une vidéo réelle. Le modèle, l’éclairage, le cadrage et les occultations peuvent créer ou masquer un signal. Une validation sur vidéos instrumentées et iPhone réel reste nécessaire.</p>
+<p><a href="https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker/web_js">Documentation officielle du suivi facial MediaPipe</a></p>
+</main>
   </body>
 </html>

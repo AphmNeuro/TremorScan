@@ -25,8 +25,39 @@ Captures, logs, CSV et vidéo synthétique sont disponibles localement dans `tes
 - Le correctif Safari précédent a été confirmé fonctionnel par l’utilisateur
   sur son appareil. Cela ne couvre pas tous les modèles et versions d’iOS.
 
+## Mise à jour v0.3 — 9 octobre 2026
+
+- Vue approfondie retirée ; résultat simplifié, une ou deux fréquences et spectre
+  avec repères correspondants. Les harmoniques possibles restent signalées.
+- 54 tests numériques passent, dont deux fréquences simultanées, alternance
+  temporelle, artefact sur un seul doigt, harmoniques, familles contradictoires,
+  données manquantes et reprise automatique après pertes d’images.
+- Nouveau traitement CPU avec une file bornée à trois images et présentation
+  adaptative plafonnée à 30 images par seconde de temps de calcul. Les horodatages
+  vidéo et la résolution de détection sont conservés. L’accélération GPU évaluée
+  n’a pas été retenue : elle n’a pas donné de gain fiable dans cet environnement.
+- Vidéo de référence de 12 s : 29,5 à 30,1 s de traitement dans Edge sur le poste
+  testé, contre une durée de lecture théorique d’environ 48 s à l’ancienne vitesse
+  0,25× (hors chargement). Deux mains à 5,0 Hz, 11,5 s exploitables et 21 points
+  contributifs ; 701 images au test UI, aucun callback rejeté pour calcul en cours.
+  Ce résultat ne prédit pas les performances sur iPhone.
+- Recalcul testé avec coordonnées CSV strictement identiques, exports et interface
+  mobile sans débordement. Vidéo sans main, format invalide, annulation au chargement
+  et au suivi, effacement et correctif du worker Safari testés avec succès.
+- La double fréquence est validée sur signaux et coordonnées synthétiques.
+  Elle n’a pas été validée sur des vidéos de tremblement réel ou contre un capteur.
+
 **Non testé par les essais automatisés :** Safari sur iPhone réel, caméra native
 iOS, véritables fichiers iPhone MOV/HEVC/120 i/s, vidéos cliniques, référence
 accélérométrique. La validation vidéo concerne un WebM synthétique ; elle ne
 mesure pas la justesse du modèle sur un tremblement réel. Aucun score de confiance
 clinique n’est revendiqué.
+
+## Aperçu v0.4 — 15 octobre 2026, non publié
+
+- 62 tests automatisés passent. Ajouts : toutes les régions faciales à 5 Hz, deux régions à 3/8 Hz, deux composantes 5/8 Hz dans une région, mouvement global corrigé, artefact isolé, transitoire, visage statique, plusieurs visages, pertes de suivi et identifiants CSV.
+- Test navigateur Edge (390 × 844) sur une vidéo de portrait public MediaPipe déplacé à 5 Hz : détection effective du visage, fréquence globale 5,0 Hz, 100 % de suivi, environ 11,5 s de calcul pour 10 s de vidéo. Les périodicités locales confondues avec le global sont retenues comme indéterminées. Aucun appel externe pendant le traitement. Exports, recalcul sans rechargement du modèle, changement de mode avec effacement des données et absence de débordement validés.
+- Non-régression Main : vidéo de référence 5,0 Hz sur les deux mains, 705 images, 29,7 s ; recalcul 243 ms et coordonnées identiques. Worker avec user-agent Safari : test réussi dans Chromium, pas un test iPhone.
+- Le test de vidéo Main initial en mode Visage n’a détecté aucun visage et a affiché le message prévu. La vidéo faciale de référence utilise une image publique distincte, non une vidéo clinique.
+- Le premier test de portrait mobile a révélé des faux pics locaux à la fréquence globale. La règle conservatrice ±0,6 Hz a été ajoutée et testée ; elle peut masquer un vrai mouvement local synchrone.
+- Non validés : sensibilité aux petits mouvements faciaux réels, rotations hors plan, occultations, caméra native iPhone et performances Safari. Pas de validation clinique, ni mesure d’amplitude. Bande limitée à 2–15 Hz et à la cadence réellement exploitable.
