@@ -3,6 +3,7 @@ const root = new URL("../", import.meta.url);
 for (const f of [
   "vendor/vision_bundle.mjs",
   "vendor/hand_landmarker.task",
+  "vendor/face_landmarker.task",
   "vendor/wasm/vision_wasm_internal.wasm",
 ])
   await access(new URL(f, root));

@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 const root = new URL("../", import.meta.url);
 const base = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/";
 const assets = [
+  ["vendor/face_landmarker.task", "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"],
   ["vendor/vision_bundle.mjs", base + "vision_bundle.mjs"],
   ...[
     "vision_wasm_internal.js",
