@@ -98,3 +98,7 @@ Tests faciaux : node --test tests/face.test.mjs. Test navigateur : node tests/fa
 - Aperçu Main / Visage : https://aphmneuro.github.io/TremorScan/visage/
 
 Le workflow pages.yml construit la version stable depuis le commit 5261467afcdf75db5f9a3d4196a8c21de98c86a3 et l’aperçu depuis codex/visage-preview, puis publie un seul artefact contenant les deux dossiers. Seules les suppressions de présentation demandées sont appliquées à l’accueil stable par scripts/simplify-copy.mjs. Pour actualiser l’aperçu, modifier sa branche puis lancer Publish TremorScan sur main. La promotion de l’analyse vers le lien principal nécessite une décision explicite et une modification du ref stable ; ne pas fusionner la branche d’aperçu pour publier.
+
+### Aperçu v0.4.1
+
+138 points, écarts paupières/sourcils/lèvres, bande faciale 0,5–15 Hz et résultats possibles avec deux sous-régions. Un signal partagé par de nombreuses régions est regroupé avec localisation incertaine. Tests numériques : tests/face-sensitive.test.mjs. Vidéo synthétique locale de paupières : tests/face-blink-video.mjs ; --reuse réutilise le WebM déjà généré. Aucun changement du moteur du lien principal.
