@@ -541,3 +541,5 @@ footer {
     align-items: start;
   }
 }
+
+.mode-choice{display:flex;gap:8px;margin-bottom:18px}.mode-choice button{min-width:100px}

@@ -24,12 +24,12 @@
           class="tag"
           >Prototype</span
         ></a
-      ><a href="./docs/methodologie.html">Méthode & limites ↗</a>
+      >
     </header>
     <main id="main">
       <section class="intro">
         <p class="eyebrow">OBSERVER LE MOUVEMENT</p>
-        <h1>Un mouvement.<br /><em>Une fréquence à explorer.</em></h1>
+        <h1 class="sr">TremorScan</h1>
         <p class="subtitle">Analyse vidéo de la fréquence des tremblements.</p>
         <p class="local">
           <span aria-hidden="true">◉</span> Votre vidéo reste sur cet appareil.
@@ -38,8 +38,9 @@
       <section class="panel import-panel" aria-labelledby="start-title">
         <div>
           <p class="eyebrow">01 / VOTRE VIDÉO</p>
+          <div class="mode-choice" role="group" aria-label="Zone à analyser"><button id="mode-hand" class="primary" aria-pressed="true">Main</button><button id="mode-face" class="secondary" aria-pressed="false">Visage</button></div>
           <h2 id="start-title">Commençons par une main.</h2>
-          <p>Filmez 10 à 20 secondes, avec la main entière bien visible.</p>
+          <p id="capture-hint">Filmez 10 à 20 secondes, avec la main entière bien visible.</p>
         </div>
         <div class="import-actions">
           <button id="capture" class="primary">
@@ -72,8 +73,8 @@
         <li>
           <span aria-hidden="true">☀</span>
           <div>
-            <strong>Éclairez la main</strong>
-            <p>Fond uni, doigts et poignet visibles.</p>
+            <strong id="lighting-title">Éclairez la main</strong>
+            <p id="lighting-hint">Fond uni, doigts et poignet visibles.</p>
           </div>
         </li>
         <li>
@@ -108,7 +109,7 @@
           <div class="analysis-controls">
             <button id="analyze" class="primary">Analyser la vidéo</button
             ><button id="cancel" class="secondary" hidden>Annuler</button>
-            <p>
+            <p id="tracking-hint">
               Les mains et leurs 21 points anatomiques sont suivis
               automatiquement.
             </p>
@@ -175,7 +176,7 @@
         <p class="notice">
           Mesure expérimentale — aucun diagnostic ne peut être établi à partir
           de ce résultat. Un mouvement de caméra peut imiter un tremblement de
-          la main.
+          la zone observée.
         </p>
         <div id="result-cards"></div>
         <p id="analysis-time" class="fine"></p><details><summary>Qualité de l’enregistrement</summary><p id="sampling" class="fine"></p></details>
@@ -184,25 +185,10 @@
           plus proche (écart maximal de 0,1 s).
         </p>
       </section>
-      <section class="privacy">
-        <h2>Local, explicite, expérimental.</h2>
-        <p>
-          Aucune vidéo ni coordonnée anatomique n’est envoyée à un serveur.
-          Aucun compte, aucune télémétrie. Fermer ou effacer la vidéo libère les
-          données de la session ; seuls les exports que vous téléchargez restent
-          sur votre appareil.
-        </p>
-        <p>
-          Ce prototype n’est pas un dispositif médical diagnostique validé. Le
-          traitement local ne constitue pas une validation réglementaire pour un
-          usage clinique.
-        </p>
-      </section>
+      
     </main>
     <footer>
-      <span>TremorScan · v0.3</span
-      ><a href="./docs/methodologie.html"
-        >Comprendre les calculs et leurs limites</a
+      <span>TremorScan · v0.4 — aperçu</span
       >
     </footer>
   </body>

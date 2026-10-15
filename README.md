@@ -85,3 +85,9 @@ Alternative sans Actions : publier le contenu de `dist/` à la racine d’une br
 ## Ressources tierces
 
 MediaPipe Tasks Vision : Apache-2.0 (Google), https://www.npmjs.com/package/@mediapipe/tasks-vision . Modèle officiel : https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker . Image optionnelle issue du notebook d’exemple Google : https://github.com/google-ai-edge/mediapipe-samples/blob/main/examples/hand_landmarker/python/hand_landmarker.ipynb . L’image de test n’est pas intégrée au build de production. Les ressources versionnées téléchargées restent inchangées ; consulter leurs conditions avant redistribution dans un autre contexte.
+
+## Aperçu local v0.4 — Main / Visage
+
+Choix dans le panneau d’import existant. Onze régions faciales et mouvement global, aucune amplitude ajoutée. La bande reste 2–15 Hz. Le mode ne détermine pas la nature du mouvement. Ressources du modèle servies localement ; exécuter setup puis build comme ci-dessus. Version non publiée, à valider avant déploiement.
+
+Tests faciaux : node --test tests/face.test.mjs. Test navigateur : node tests/face-ui.mjs (PLAYWRIGHT_MODULE_PATH ; TEST_URL facultatif). Il utilise tests/assets/face-reference.jpg, image publique https://storage.googleapis.com/mediapipe-assets/portrait.jpg ; cette image et les vidéos de test ne sont jamais publiées dans dist. Le test vidéo vérifie l’intégration, pas la justesse des oscillations faciales locales.
