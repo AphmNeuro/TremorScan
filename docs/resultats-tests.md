@@ -61,3 +61,11 @@ clinique n’est revendiqué.
 - Le test de vidéo Main initial en mode Visage n’a détecté aucun visage et a affiché le message prévu. La vidéo faciale de référence utilise une image publique distincte, non une vidéo clinique.
 - Le premier test de portrait mobile a révélé des faux pics locaux à la fréquence globale. La règle conservatrice ±0,6 Hz a été ajoutée et testée ; elle peut masquer un vrai mouvement local synchrone.
 - Non validés : sensibilité aux petits mouvements faciaux réels, rotations hors plan, occultations, caméra native iPhone et performances Safari. Pas de validation clinique, ni mesure d’amplitude. Bande limitée à 2–15 Hz et à la cadence réellement exploitable.
+
+## Aperçu v0.4.1 — 15 octobre 2026
+
+- 73 tests numériques passent, dont ouvertures palpébrales à 0,5 / 0,6 / 1 / 1,5 / 3 Hz, deux groupes de sourcils concordants, bruit, clignement isolé, dérive et rejet des lobes secondaires hors bande.
+- 138 points conservés ; mesures signées des paupières, hauteur sourcil–paupière et ouvertures de bouche. Bande faciale par défaut 0,5–15 Hz. La méthode Main conserve ses paramètres.
+- Vidéo synthétique de 12 s avec fermeture des paupières à 1 Hz : véritable détection MediaPipe, import et analyse dans Edge ; résultat 0,998 Hz, affiché 1,0 Hz, sans erreur navigateur. Les mouvements corrélés du maillage sont regroupés dans un résultat « Mouvement facial partagé », localisation incertaine, plutôt que présentés comme autant de mouvements indépendants. Des harmoniques synchrones peuvent aussi être regroupées.
+- Non-régression navigateur : vidéo Main à 5 Hz sur deux mains, 704 images, environ 29,8 s ; recalcul 244 ms, coordonnées identiques. Portrait déplacé globalement à 5 Hz : fréquence globale détectée sans fréquence locale indépendante.
+- Construction statique réussie. Les vidéos sont synthétiques et ne valident ni les mouvements réels de l’utilisateur, ni la sensibilité clinique, ni Safari sur iPhone réel. Le regroupement peut masquer des mouvements réellement distincts mais synchrones ; il ne fournit pas une localisation anatomique certaine.
