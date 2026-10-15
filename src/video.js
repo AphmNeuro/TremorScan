@@ -1,4 +1,5 @@
 import { HandTracker } from "./tracking.js";
+import { FaceTracker } from "./face.js";
 import { PlaybackPacer, needsSlowerPass } from "./pacing.js";
 export class VideoSession {
   constructor(video, canvas, onProgress) {
@@ -8,6 +9,10 @@ export class VideoSession {
     this.url = null;
     this.worker = null;
     this.cancelled = false;
+    this.mode = 'hand';
+  }
+  setMode(mode){
+    if(mode!==this.mode){this.dispose();this.mode=mode==='face'?'face':'hand';}
   }
   async load(file) {
     this.dispose();
@@ -87,7 +92,7 @@ export class VideoSession {
         "Ce navigateur ne permet pas le traitement vidéo local requis.",
       );
     this.cancelled = false;
-    this.tracker = new HandTracker();
+    this.tracker = this.mode==='face'?new FaceTracker():new HandTracker();
     this.frames = [];
     this.times = [];
     this.processed = 0;
@@ -123,7 +128,7 @@ export class VideoSession {
         );
       };
     });
-    this.worker.postMessage({ type: "init" });
+    this.worker.postMessage({ type: "init", mode:this.mode });
     try {
       await ready;
     } catch (e) {
@@ -214,6 +219,7 @@ export class VideoSession {
         this.onProgress({ phase: "spectrum", progress: 1 });
         this.worker.postMessage({
           type: "analyze",
+          mode:this.mode,
           tracks: this.tracker.tracks,
           width: v.videoWidth,
           height: v.videoHeight,
@@ -256,6 +262,7 @@ export class VideoSession {
           finished = true;
           cleanup();
           const meta = {
+            mode:this.mode,
             elapsedSeconds: (performance.now() - started) / 1000,
             reusedTracking: false,
             missedCallbacks: this.missedCallbacks,
@@ -377,7 +384,7 @@ export class VideoSession {
         this.cached = { ...source, results: data.results, meta: { ...source.meta, reusedTracking: true, elapsedSeconds: (performance.now() - started) / 1000 } };
         resolve(this.cached);
       };
-      this.worker.postMessage({type: "analyze", tracks: source.tracks, width: source.meta.width, height: source.meta.height, band, count: source.meta.count});
+      this.worker.postMessage({type: "analyze", mode:this.mode, tracks: source.tracks, width: source.meta.width, height: source.meta.height, band, count: source.meta.count});
     });
   }
   dispose() {

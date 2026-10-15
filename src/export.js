@@ -1,10 +1,11 @@
+import { FACE_IDS } from "./face.js";
 const cell = (v) => '"' + String(v ?? "").replaceAll('"', '""') + '"';
 export const csv = (rows) =>
   "\uFEFF" + rows.map((r) => r.map(cell).join(",")).join("\r\n");
 export function timeCSV(data) {
   const rows = [
     [
-      "hand_id",
+      data.meta?.mode==='face'?"face_id":"hand_id",
       "time_s",
       "landmark",
       "x_normalized",
@@ -20,7 +21,7 @@ export function timeCSV(data) {
         rows.push([
           t.id,
           f.time,
-          i,
+          data.meta.mode==='face'?FACE_IDS[i]:i,
           p.x,
           p.y,
           p.z,
@@ -34,7 +35,7 @@ export function resultCSV(data) {
   return csv([
     [
       "version",
-      "hand_id",
+      data.meta?.mode==='face'?"face_id":"hand_id",
       "dominant_hz",
       "reliability",
       "reason",
@@ -48,12 +49,12 @@ export function resultCSV(data) {
       "band_high_hz",
       "welch_resolution_hz",
       "stable_window_fraction",
-      "frequency_1_hz", "frequency_2_hz", "possible_harmonic", "elapsed_s", "reused_tracking", "sampling_warning", "backend", "maximum_playback_rate", "retried", "first_pass_s", "first_pass_processed", "first_pass_lost",
+      "frequency_1_hz", "frequency_2_hz", "possible_harmonic", "elapsed_s", "reused_tracking", "sampling_warning", "backend", "maximum_playback_rate", "retried", "first_pass_s", "first_pass_processed", "first_pass_lost", "mode", "region",
     ],
     ...data.results.map((r) => {
       const a = r.representative?.result;
       return [
-        "0.3.0",
+        "0.4.0",
         r.id,
         r.frequency,
         r.reliability,
@@ -73,12 +74,13 @@ export function resultCSV(data) {
         data.meta?.backend, data.meta?.maximumRate, data.meta?.retried || false,
         data.meta?.firstPass?.elapsedSeconds, data.meta?.firstPass?.count,
         data.meta?.firstPass ? data.meta.firstPass.skipped + data.meta.firstPass.missedCallbacks : null,
+        data.meta.mode || "hand", r.region || "",
       ];
     }),
   ]);
 }
 export function spectrumCSV(data) {
-  const rows = [["hand_id", "point", "axis", "component", "spectrum_type", "window_center_s", "frequency_hz", "psd_px2_per_hz", "band_low_hz", "band_high_hz", "resolution_hz"]];
+  const rows = [[data.meta?.mode==='face'?"face_id":"hand_id", "point", "axis", "component", "spectrum_type", "window_center_s", "frequency_hz", "psd_px2_per_hz", "band_low_hz", "band_high_hz", "resolution_hz"]];
   for (const r of data.results) {
     const c = r.representative, a = c?.result;
     if (!a) continue;

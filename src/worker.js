@@ -1,9 +1,11 @@
-import { HandLandmarker, FilesetResolver } from "../vendor/vision_bundle.mjs";
-import { analyzeTracks } from "./analysis.js";
-let detector;
+import { HandLandmarker, FaceLandmarker, FilesetResolver } from "../vendor/vision_bundle.mjs";
+import { analyzeTracks, analyzeFaceTracks } from "./analysis.js";
+import { compactFace } from "./face.js";
+let detector, mode = 'hand';
 self.onmessage = async ({ data }) => {
   try {
     if (data.type === "init") {
+      mode = data.mode === 'face' ? 'face' : 'hand';
       if (typeof OffscreenCanvas === "undefined") {
         throw Error("Le traitement nécessite OffscreenCanvas. Mettez iOS et Safari à jour, puis réessayez.");
       }
@@ -20,7 +22,7 @@ self.onmessage = async ({ data }) => {
         canvas,
         baseOptions: {
           modelAssetPath: new URL(
-            "../vendor/hand_landmarker.task",
+            mode === 'face' ? "../vendor/face_landmarker.task" : "../vendor/hand_landmarker.task",
             import.meta.url,
           ).href,
           delegate: "CPU",
@@ -31,7 +33,13 @@ self.onmessage = async ({ data }) => {
         minHandPresenceConfidence: 0.6,
         minTrackingConfidence: 0.6,
       };
-      detector = await HandLandmarker.createFromOptions(files, options);
+      if(mode==='face'){
+        delete options.numHands; delete options.minHandDetectionConfidence; delete options.minHandPresenceConfidence;
+        // numFaces=2 disables MediaPipe's single-face temporal smoothing.
+        // Multi-face frames are rejected downstream, not analysed together.
+        Object.assign(options,{numFaces:2,minFaceDetectionConfidence:0.6,minFacePresenceConfidence:0.6,outputFaceBlendshapes:false,outputFacialTransformationMatrixes:false});
+      }
+      detector = await (mode==='face'?FaceLandmarker:HandLandmarker).createFromOptions(files, options);
       self.postMessage({ type: "ready", backend: options.baseOptions.delegate });
     } else if (data.type === "frame") {
       try {
@@ -39,7 +47,7 @@ self.onmessage = async ({ data }) => {
         self.postMessage({
           type: "frame",
           time: data.time,
-          hands: result.landmarks,
+          hands: mode==='face'?result.faceLandmarks.map(compactFace):result.landmarks,
         });
       } finally {
         data.bitmap.close();
@@ -47,7 +55,7 @@ self.onmessage = async ({ data }) => {
     } else if (data.type === "analyze") {
       self.postMessage({
         type: "results",
-        results: analyzeTracks(
+        results: (data.mode==='face'?analyzeFaceTracks:analyzeTracks)(
           data.tracks,
           data.width,
           data.height,

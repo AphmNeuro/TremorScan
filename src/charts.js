@@ -1,5 +1,6 @@
 import { CONNECTIONS } from "./tracking.js";
-export function overlay(canvas, video, hands = []) {
+import { FACE_CONNECTIONS } from "./face.js";
+export function overlay(canvas, video, hands = [], mode='hand') {
   const scale = Math.min(1, 960 / Math.max(video.videoWidth || 640, video.videoHeight || 480));
   const width = Math.round((video.videoWidth || 640) * scale);
   const height = Math.round((video.videoHeight || 480) * scale);
@@ -14,7 +15,7 @@ export function overlay(canvas, video, hands = []) {
     c.strokeStyle = j ? "#e79a44" : "#38debd";
     c.fillStyle = c.strokeStyle;
     c.lineWidth = Math.max(2, canvas.width / 320);
-    for (const [a, b] of CONNECTIONS) {
+    for (const [a, b] of (mode==='face'?FACE_CONNECTIONS:CONNECTIONS)) {
       c.beginPath();
       c.moveTo(p[a].x * canvas.width, p[a].y * canvas.height);
       c.lineTo(p[b].x * canvas.width, p[b].y * canvas.height);

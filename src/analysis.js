@@ -1,5 +1,6 @@
 import { welch, peaks, quantile, detrend, mean } from "./spectrum.js";
 import { extractSignals } from "./tracking.js";
+import { REGIONS, GLOBAL_REGION, stabilizedFrames, faceSignals } from "./face.js";
 export function regularize(samples) {
   const valid = samples.filter(
     (p) => Number.isFinite(p.t) && Number.isFinite(p.v),
@@ -305,4 +306,35 @@ export function analyzeTracks(tracks, width, height, band, processedCount) {
           })),
       };
     });
+}
+export function analyzeFaceTracks(tracks,width,height,band,processedCount){
+  return tracks.filter(t=>t.frames.length>=32).flatMap(track=>{
+    const frames=stabilizedFrames(track.frames,width,height);
+    const results=[GLOBAL_REGION,...REGIONS].map(region=>{
+      const local=region.key!=='head';
+      const source=local?frames:track.frames.map(f=>({time:f.time,landmarks:f.landmarks.map(p=>({x:p.x*width,y:p.y*height}))}));
+      const channels=faceSignals(source,region).map(c=>({...c,family:local?'relative':'global',result:analyzeSignal(c.samples,band)}));
+      const result=aggregate(channels);
+      // All three spatial subregions must support the result. No isolated point vote.
+      const tracked=source.filter(f=>f.landmarks).length/Math.max(1,processedCount);
+      const accepted=result.groups>=3 && tracked>=0.75;
+      const frequencies=accepted?(result.frequencies||(result.frequency==null?[]:[result.frequency])):[];
+      return {...result, frequency:frequencies.length===1?frequencies[0]:null,frequencies,
+        reliability:frequencies.length?result.reliability:'Indéterminée',
+        reason:frequencies.length?'Périodicité concordante dans cette région. Elle ne précise pas la nature du mouvement.'+(result.harmonic?' Une harmonique est possible.':''):'Aucune périodicité suffisamment stable et concordante dans cette région, ou suivi insuffisant.',
+        id:track.id,region:region.key,label:region.label,totalPoints:region.groups.flat().length,
+        tracking:tracked,observedDuration:track.frames.at(-1).time-track.frames[0].time,
+      };
+    });
+    // A rigidly moving portrait can produce local model jitter at the same
+    // frequency. Such local peaks cannot establish an independent movement.
+    const global=results[0].frequencies;
+    for(const r of results.slice(1)){
+      if(r.frequencies.some(f=>global.some(g=>Math.abs(f-g)<=0.6))){
+        r.frequency=null;r.frequencies=[];r.reliability='Indéterminée';
+        r.reason='Périodicité non distinguable du mouvement global du visage.';
+      }
+    }
+    return results;
+  });
 }

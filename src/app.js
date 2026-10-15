@@ -15,6 +15,7 @@ function message(text, error = false) {
 function locked(on) {
   loading = on;
   for (const id of [
+    "mode-hand", "mode-face",
     "capture",
     "import",
     "analyze",
@@ -41,8 +42,19 @@ const session = new VideoSession(video, $("overlay"), (p) => {
     p.phase === "retry" ? "Reprise automatique avec une lecture prudente…" : p.phase === "spectrum"
       ? "Calcul des spectres et recherche d’un consensus…"
       : `${Math.round(p.progress * 100)} % · ${p.count} images analysées · ${(p.time || 0).toFixed(1)} s de vidéo`;
-  if (p.hands) overlay($("overlay"), video, p.hands);
+  if (p.hands) overlay($("overlay"), video, p.hands, session.mode);
 });
+for(const mode of ['hand','face']) $('mode-'+mode).onclick=()=>{
+  if(loading || session.mode===mode)return;
+  session.setMode(mode);resetResults();$('workspace').hidden=true;message('');
+  for(const m of ['hand','face']){const b=$('mode-'+m);b.setAttribute('aria-pressed',String(m===mode));b.className=m===mode?'primary':'secondary';}
+  const face=mode==='face';
+  $('start-title').textContent=face?'Commençons par un visage.':'Commençons par une main.';
+  $('capture-hint').textContent=face?'Filmez 10 à 20 secondes, visage de face, sans parler, avec le mouvement que vous souhaitez observer.':'Filmez 10 à 20 secondes, avec la main entière bien visible.';
+  $('lighting-title').textContent=face?'Éclairez le visage':'Éclairez la main';
+  $('lighting-hint').textContent=face?'Un seul visage de face, sans zone masquée.':'Fond uni, doigts et poignet visibles.';
+  $('tracking-hint').textContent=face?'Les différentes régions du visage et son mouvement global sont suivis automatiquement. Une fréquence est recherchée dans chaque région, entre 2 et 15 Hz. Les mouvements plus lents ou irréguliers peuvent rester non déterminés.':'Les mains et leurs 21 points anatomiques sont suivis automatiquement.';
+};
 function resetResults() {
   data = null;
   $("results").hidden = true;
@@ -137,17 +149,25 @@ function render() {
       node(
         "p",
         data.tracks.length
-          ? "Suivi trop bref ou discontinu. Filmez au moins 10 secondes avec les doigts et le poignet visibles."
-          : "Aucune main détectée. Vérifiez le cadrage, la lumière et la netteté.",
+          ? (session.mode==='face'?"Suivi trop bref ou discontinu. Filmez un seul visage de face pendant 10 à 20 secondes.":"Suivi trop bref ou discontinu. Filmez au moins 10 secondes avec les doigts et le poignet visibles.")
+          : (session.mode==='face'?"Aucun visage unique suivi. Vérifiez le cadrage, la lumière et la présence d’un seul visage.":"Aucune main détectée. Vérifiez le cadrage, la lumière et la netteté."),
         "notice",
       ),
     );
   }
-  for (const r of data.results) {
+  let shown=data.results;
+  if(session.mode==='face' && data.results.length){
+    shown=data.results.filter(r=>r.frequencies?.length);
+    const absent=data.results.filter(r=>!r.frequencies?.length);
+    if(!shown.length)container.append(node('p','Aucune périodicité suffisamment stable retrouvée entre '+$('low').value+' et '+$('high').value+' Hz. Cela ne signifie pas une absence de mouvement.','notice'));
+    if(absent.length){const details=node('details');details.append(node('summary','Régions sans fréquence déterminée ('+absent.length+')'),node('p',absent.map(r=>r.label+' · visage '+r.id+' : '+r.reason).join(' '),'fine'));container.append(details);}
+    container.append(node('p','Le mouvement global peut inclure celui de la caméra. Les fréquences locales sont calculées après correction du mouvement de tête dans le plan de l’image. Un mouvement volontaire ou un clignement régulier peut aussi être périodique.','fine'));
+  }
+  for (const r of shown) {
     const card = node("article", undefined, "result-card"),
       hero = node("div", undefined, "result-hero"),
       title = node("div");
-    title.append(node("p", `MAIN SUIVIE ${r.id}`, "eyebrow"));
+    title.append(node("p", r.label ? `${r.label.toUpperCase()} · VISAGE ${r.id}` : `MAIN SUIVIE ${r.id}`, "eyebrow"));
     const frequencies = r.frequencies || (r.frequency === null ? [] : [r.frequency]);
     const values = node("div", undefined, "frequency-values");
     if (!frequencies.length) values.append(node("div", "Non déterminée", "frequency"));
@@ -165,8 +185,8 @@ function render() {
       const metrics = node("dl", undefined, "metrics");
       for (const [label, value] of [
         ["Vidéo exploitable", `${a.grid.duration.toFixed(1)} s`],
-        ["Suivi de la main", `${Math.round(r.tracking * 100)} %`],
-        ["Points utilisés", `${r.points} / 21`],
+        [session.mode==='face'?"Suivi exploitable":"Suivi de la main", `${Math.round(r.tracking * 100)} %`],
+        ["Points utilisés", `${r.points} / ${r.totalPoints || 21}`],
         ["Bande analysée", `${a.band[0].toFixed(1)}–${a.band[1].toFixed(1)} Hz`],
       ]) { const item = node("div"); item.append(node("dt", label), node("dd", value)); metrics.append(item); }
       card.append(metrics);
@@ -185,13 +205,13 @@ function render() {
       disposers.push(plot(c, ids.map(i=>a.spec.freq[i]), ids.map(i=>a.spec.power[i]), {xlabel:"Fréquence (Hz)", ylabel:"Puissance (pixels² / Hz)", markers:frequencies}));
       disposers.push(plot(mc, a.grid.times, detrend(a.grid.values), {ylabel:"Déplacement (pixels)"}));
     } else {
-      card.append(node("p", "Essayez une vidéo de 10 à 20 secondes, téléphone fixe et main bien éclairée.", "fine"));
+      card.append(node("p", session.mode==='face'?"Aucune fréquence retenue dans la bande analysée : cela ne signifie pas une absence de mouvement.":"Essayez une vidéo de 10 à 20 secondes, téléphone fixe et main bien éclairée.", "fine"));
       container.append(card);
     }
   }
   const dt = data.meta.times.slice(1).map((t, i) => t - data.meta.times[i]);
   $("sampling").textContent =
-    `${data.meta.count} images traitées · cadence médiane observée ${dt.length ? (1 / quantile(dt, 0.5)).toFixed(1) : "—"} images/s · ${data.meta.skipped} callbacks non traités pendant un calcul. La cadence originale du fichier n’est pas déduite de celle du traitement. ${data.meta.ambiguous} image(s) exclue(s) pour proximité ambiguë des mains.`;
+    `${data.meta.count} images traitées · cadence médiane observée ${dt.length ? (1 / quantile(dt, 0.5)).toFixed(1) : "—"} images/s · ${data.meta.skipped} callbacks non traités pendant un calcul. La cadence originale du fichier n’est pas déduite de celle du traitement. ${data.meta.ambiguous} image(s) exclue(s) ${session.mode==='face'?"car plusieurs visages sont visibles":"pour proximité ambiguë des mains"}.`;
   $("analysis-time").textContent = `Résultat obtenu en ${data.meta.elapsedSeconds?.toFixed(1) || "—"} s${data.meta.retried ? " · vérification à vitesse réduite effectuée" : ""}.`;
   if (data.meta.samplingWarning) $("analysis-time").textContent += " Certaines images manquent encore : interprétez la mesure avec prudence.";
   $("sampling").textContent += ` Calcul effectué en ${data.meta.elapsedSeconds?.toFixed(1) || "—"} s${data.meta.reusedTracking ? " · coordonnées réutilisées sans nouvelle détection" : ""}.`;
@@ -217,6 +237,7 @@ function replay() {
       nearest && Math.abs(nearest.time - video.currentTime) <= 0.1
         ? nearest.hands
         : [],
+      session.mode,
     );
   }
   if (!video.paused) replayId = requestAnimationFrame(replay);
