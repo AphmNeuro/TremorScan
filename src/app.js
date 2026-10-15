@@ -2,6 +2,7 @@ import { VideoSession } from "./video.js";
 import { overlay, plot } from "./charts.js";
 import { download, resultCSV, timeCSV } from "./export.js";
 import { quantile, detrend } from "./spectrum.js";
+import { faceMask } from './face-mask.js';
 const $ = (id) => document.getElementById(id);
 let data = null,
   loading = false,
@@ -169,7 +170,7 @@ function render() {
     const card = node("article", undefined, "result-card"),
       hero = node("div", undefined, "result-hero"),
       title = node("div");
-    title.append(node("p", r.label ? `${r.label.toUpperCase()} · VISAGE ${r.id}` : `MAIN SUIVIE ${r.id}`, "eyebrow"));
+    title.append(node("p", r.label ? `MOUVEMENT SUIVI · VISAGE ${r.id}` : `MAIN SUIVIE ${r.id}`, "eyebrow"));
     const frequencies = r.frequencies || (r.frequency === null ? [] : [r.frequency]);
     const values = node("div", undefined, "frequency-values");
     if (!frequencies.length) values.append(node("div", "Non déterminée", "frequency"));
@@ -181,9 +182,15 @@ function render() {
     title.append(values);
     hero.append(title, node("span", data.meta.samplingWarning ? "Acquisition à vérifier" : r.reliability, "reliability"));
     card.append(hero, node("p", r.reason, "fine"));
+    if(session.mode==='face'){
+      const mask=faceMask(data.tracks.find(t=>t.id===r.id),r,data.meta.width,data.meta.height);
+      if(mask){const figure=node('figure',undefined,'face-mask-figure');figure.append(mask,node('figcaption','Rouge : points contribuant au signal affiché. Vert : autres points suivis.','fine'));
+        if(r.sourceRegions?.length)figure.append(node('p','La coloration montre les points de la mesure représentative ; elle ne confirme pas l’origine du mouvement.','fine'));
+        card.append(figure);}
+    }
     if (frequencies.length === 2) card.append(node("p", "Deux pics ne prouvent pas l’existence de deux tremblements distincts.", "fine"));
     const a = r.representative?.result;
-    if(r.representative?.measurement)card.append(node("p", "Mesure : "+r.representative.measurement+".", "fine"));
+    if(session.mode!=='face' && r.representative?.measurement)card.append(node("p", "Mesure : "+r.representative.measurement+".", "fine"));
     if (a) {
       const metrics = node("dl", undefined, "metrics");
       for (const [label, value] of [

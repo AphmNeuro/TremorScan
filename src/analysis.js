@@ -345,7 +345,9 @@ export function analyzeFaceTracks(tracks,width,height,band,processedCount){
       return {...result, frequency:frequencies.length===1?frequencies[0]:null,frequencies,
         reliability:frequencies.length?(result.groups===2?'Périodicité possible':result.reliability):'Indéterminée',
         reason:frequencies.length?(result.groups===2?'Périodicité retrouvée dans deux sous-régions sur trois, à confirmer.':'Périodicité concordante dans cette région. Elle ne précise pas la nature du mouvement.')+(result.harmonic?' Une harmonique est possible.':''):'Aucune périodicité suffisamment stable et concordante dans cette région, ou suivi insuffisant.',
-        id:track.id,region:region.key,label:region.label,points,strength,totalPoints:new Set([...region.groups.flat(),...(region.gaps||[]).flat()]).size,
+        id:track.id,region:region.key,label:region.label,points,strength,
+        contributingPointIds:[...new Set(supporting.flatMap(c=>c.pointIds))],
+        totalPoints:new Set([...region.groups.flat(),...(region.gaps||[]).flat()]).size,
         tracking:tracked,observedDuration:track.frames.at(-1).time-track.frames[0].time,
       };
     });
