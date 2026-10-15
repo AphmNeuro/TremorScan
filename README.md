@@ -88,6 +88,13 @@ MediaPipe Tasks Vision : Apache-2.0 (Google), https://www.npmjs.com/package/@med
 
 ## Aperçu local v0.4 — Main / Visage
 
-Choix dans le panneau d’import existant. Onze régions faciales et mouvement global, aucune amplitude ajoutée. La bande reste 2–15 Hz. Le mode ne détermine pas la nature du mouvement. Ressources du modèle servies localement ; exécuter setup puis build comme ci-dessus. Version non publiée, à valider avant déploiement.
+Choix dans le panneau d’import existant. Onze régions faciales et mouvement global, aucune amplitude ajoutée. La bande reste 2–15 Hz. Le mode ne détermine pas la nature du mouvement. Ressources du modèle servies localement ; exécuter setup puis build comme ci-dessus. Aperçu parallèle destiné à la validation, distinct de la version utilisée.
 
 Tests faciaux : node --test tests/face.test.mjs. Test navigateur : node tests/face-ui.mjs (PLAYWRIGHT_MODULE_PATH ; TEST_URL facultatif). Il utilise tests/assets/face-reference.jpg, image publique https://storage.googleapis.com/mediapipe-assets/portrait.jpg ; cette image et les vidéos de test ne sont jamais publiées dans dist. Le test vidéo vérifie l’intégration, pas la justesse des oscillations faciales locales.
+
+## Deux adresses dans le même dépôt
+
+- Version Main existante : https://aphmneuro.github.io/TremorScan/
+- Aperçu Main / Visage : https://aphmneuro.github.io/TremorScan/visage/
+
+Le workflow pages.yml construit la version stable depuis le commit 5261467afcdf75db5f9a3d4196a8c21de98c86a3 et l’aperçu depuis codex/visage-preview, puis publie un seul artefact contenant les deux dossiers. Seules les suppressions de présentation demandées sont appliquées à l’accueil stable par scripts/simplify-copy.mjs. Pour actualiser l’aperçu, modifier sa branche puis lancer Publish TremorScan sur main. La promotion de l’analyse vers le lien principal nécessite une décision explicite et une modification du ref stable ; ne pas fusionner la branche d’aperçu pour publier.
