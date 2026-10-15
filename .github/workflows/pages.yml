@@ -15,16 +15,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Keep the existing analysis release at the main URL.
+          ref: 5261467afcdf75db5f9a3d4196a8c21de98c86a3
+          path: stable
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/visage-preview
+          path: preview
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: node scripts/setup.mjs
-      - run: node --test tests/*.test.mjs
-      - run: node scripts/build.mjs
+      - name: Build existing release
+        working-directory: stable
+        run: |
+          node scripts/setup.mjs
+          node --test tests/*.test.mjs
+          node scripts/build.mjs
+      - name: Build parallel preview
+        working-directory: preview
+        run: |
+          node scripts/setup.mjs
+          node --test tests/*.test.mjs
+          node scripts/build.mjs
+      - name: Assemble both sites
+        run: |
+          node preview/scripts/simplify-copy.mjs stable/dist/index.html
+          node preview/scripts/simplify-copy.mjs preview/dist/index.html
+          mkdir -p stable/dist/visage
+          cp -a preview/dist/. stable/dist/visage/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: stable/dist
   deploy:
     needs: build
     environment:
