@@ -1,0 +1,1 @@
+.mode-navigation{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}.mode-navigation a{padding:10px 22px;border:1px solid var(--line);border-radius:30px;text-decoration:none}.mode-navigation a[aria-current]{background:var(--teal);color:white;font-weight:700}.face-only .mode-choice{display:none!important}
