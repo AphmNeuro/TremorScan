@@ -165,7 +165,7 @@ function render() {
         amplitudeBox.append(v,node('p',`Crête à crête · ${a.frequency.toFixed(1)} Hz`,'fine'));
       }
     }else{
-      amplitudeBox.append(node('strong','Non mesurable sur cette vidéo'),node('p','Gommette bleue ronde de 1 cm non reconnue de façon suffisamment stable. Gardez-la visible, face à l'objectif.','fine'));
+      amplitudeBox.append(node('strong','Non mesurable sur cette vidéo'),node('p','Gommette bleue ronde de 1 cm non reconnue de façon suffisamment stable. Gardez-la visible, face à l\u2019objectif.','fine'));
     }
     amplitudeBox.append(node('p','Échelle : gommette de 1 cm de diamètre. Estimation projetée du signal représentatif ; téléphone fixe et main dans le même plan que la gommette.','fine'));
     title.append(amplitudeBox);
