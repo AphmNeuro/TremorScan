@@ -15,3 +15,7 @@ test('Joint fit recovers two peak-to-peak amplitudes with drift',()=>{
  assert.ok(Math.abs(r[0].peakToPeak-1)<1e-8);assert.ok(Math.abs(r[1].peakToPeak-.4)<1e-8);
  assert.equal(amplitudeCm(frames.map(f=>({...f,marker:null})),{},[3]),null);
 });
+for(const [name,color,rx,ry] of [['small blue',[30,70,180],3,3],['cyan blue',[25,150,165],9,8],['dim blue',[18,32,55],9,9],['tilted sticker',[40,100,200],10,7]]){
+ test(name,()=>{const width=80,height=80,data=new Uint8ClampedArray(width*height*4);for(let y=0;y<height;y++)for(let x=0;x<width;x++)if(((x-40)/rx)**2+((y-40)/ry)**2<1){const i=4*(y*width+x);data.set([...color,255],i);}const m=blueMarkers({data,width,height});assert.equal(m.length,1);assert.ok(Math.abs(m[0].diameter-2*rx)<1.5);});
+}
+test('Blue rectangle is not a circular marker',()=>{const width=80,height=80,data=new Uint8ClampedArray(width*height*4);for(let y=30;y<50;y++)for(let x=30;x<50;x++)data.set([20,60,220,255],4*(y*width+x));assert.equal(blueMarkers({data,width,height}).length,0);});
