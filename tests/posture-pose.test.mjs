@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {reliable,proposals} from '../src/posture-pose.js';
+test('Uncertain, hidden and off-image pose landmarks are not used',()=>{assert.equal(reliable({x:.5,y:.5,visibility:.9,presence:.9}),true);for(const p of [{x:.5,y:.5,visibility:.5},{x:.5,y:.5,visibility:.9,presence:.2},{x:1.2,y:.5,visibility:1},{x:NaN,y:.5,visibility:1}])assert.equal(reliable(p),false);});
+test('No anatomical proposal from missing torso landmarks',()=>{assert.deepEqual(proposals([], 'upper'),[]);const p=Array.from({length:33},()=>({x:10,y:20,usable:true,visibility:.9}));p[23].usable=false;assert.deepEqual(proposals(p,'pisa'),[]);});
