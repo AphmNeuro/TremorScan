@@ -7,7 +7,7 @@ for (const f of [
 ])
   await access(new URL(f, root));
 await mkdir(new URL("dist/", root), { recursive: true });
-for (const f of ["index.html", "style.css", "src", "vendor", "docs"])
+for (const f of ["index.html", "style.css", "posture.html", "posture.css", "src", "vendor", "docs"])
   await cp(new URL(f, root), new URL("dist/" + f, root), { recursive: true });
 await writeFile(new URL("dist/.nojekyll", root), "");
 console.log("Construction terminée : dist/");
