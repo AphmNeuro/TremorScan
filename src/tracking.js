@@ -40,7 +40,9 @@ export class HandTracker {
       t.last = time;
       t.wrist = wrist(landmarks);
       const xs=landmarks.map(p=>p.x),ys=landmarks.map(p=>p.y);
-      const inside=markers.filter(p=>p.x>=Math.min(...xs)&&p.x<=Math.max(...xs)&&p.y>=Math.min(...ys)&&p.y<=Math.max(...ys));
+      // Include the skin around the anatomical skeleton, especially at the wrist.
+      const padX=Math.max(.015,(Math.max(...xs)-Math.min(...xs))*.12),padY=Math.max(.015,(Math.max(...ys)-Math.min(...ys))*.12);
+      const inside=markers.filter(p=>p.x>=Math.min(...xs)-padX&&p.x<=Math.max(...xs)+padX&&p.y>=Math.min(...ys)-padY&&p.y<=Math.max(...ys)+padY);
       t.frames.push({ time, landmarks, marker:inside.length===1?inside[0]:null });
       return { id: t.id, landmarks };
     });
