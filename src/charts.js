@@ -31,6 +31,17 @@ export function overlay(canvas, video, hands = []) {
       );
       c.fill();
     }
+    // Show only the marker actually associated with this hand for calibration.
+    if (h.marker) {
+      c.save();
+      c.strokeStyle = '#000';
+      c.lineWidth = Math.max(2, canvas.width / 320);
+      c.beginPath();
+      c.arc(h.marker.x * width, h.marker.y * height,
+        h.marker.diameter * width / 2 + c.lineWidth, 0, Math.PI * 2);
+      c.stroke();
+      c.restore();
+    }
   });
 }
 export function plot(

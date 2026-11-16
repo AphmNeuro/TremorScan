@@ -1,5 +1,5 @@
-import { VideoSession } from "./video.js";
-import { overlay, plot } from "./charts.js";
+import { VideoSession } from "./video.js?v=8";
+import { overlay, plot } from "./charts.js?v=8";
 import { download, resultCSV, timeCSV } from "./export.js";
 import { quantile, detrend } from "./spectrum.js";
 const $ = (id) => document.getElementById(id);

@@ -44,7 +44,7 @@ export class HandTracker {
       const padX=Math.max(.015,(Math.max(...xs)-Math.min(...xs))*.12),padY=Math.max(.015,(Math.max(...ys)-Math.min(...ys))*.12);
       const inside=markers.filter(p=>p.x>=Math.min(...xs)-padX&&p.x<=Math.max(...xs)+padX&&p.y>=Math.min(...ys)-padY&&p.y<=Math.max(...ys)+padY);
       t.frames.push({ time, landmarks, marker:inside.length===1?inside[0]:null });
-      return { id: t.id, landmarks };
+      return { id: t.id, landmarks, marker: t.frames.at(-1).marker };
     });
   }
 }

@@ -1,4 +1,4 @@
-import { HandTracker } from "./tracking.js";
+import { HandTracker } from "./tracking.js?v=8";
 import { PlaybackPacer, needsSlowerPass } from "./pacing.js";
 export class VideoSession {
   constructor(video, canvas, onProgress) {
