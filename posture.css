@@ -3,3 +3,5 @@
 input[type=file]{display:block;max-width:100%;width:100%;min-width:0}label{display:block;min-width:0}select{width:100%;min-width:0}.panel{min-width:0;overflow-wrap:anywhere}
 
 button,#file::file-selector-button{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px 16px;background:var(--soft);color:var(--ink);cursor:pointer}button:disabled{opacity:.5}#confirmed{width:auto;margin-right:8px}#pose-status{color:var(--teal)}
+
+.point-tools{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.point-tools button{font-size:14px}.point-tools button[aria-pressed=true]{background:var(--teal);color:white}.zoom-label{display:flex;align-items:center;gap:12px;margin:16px 0}.zoom-label input{max-width:180px}#image-stage{overflow:auto;max-height:72vh;background:var(--bg);border-radius:12px}#image-stage #canvas{width:100%;max-width:none;touch-action:none;margin:0}button:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
