@@ -85,3 +85,24 @@ Alternative sans Actions : publier le contenu de `dist/` à la racine d’une br
 ## Ressources tierces
 
 MediaPipe Tasks Vision : Apache-2.0 (Google), https://www.npmjs.com/package/@mediapipe/tasks-vision . Modèle officiel : https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker . Image optionnelle issue du notebook d’exemple Google : https://github.com/google-ai-edge/mediapipe-samples/blob/main/examples/hand_landmarker/python/hand_landmarker.ipynb . L’image de test n’est pas intégrée au build de production. Les ressources versionnées téléchargées restent inchangées ; consulter leurs conditions avant redistribution dans un autre contexte.
+
+
+## Posture (prototype)
+
+`posture.html` : photo ou image de video arretee, squelette MediaPipe Pose Full
+(33 reperes), points de mesure deplacables, validation anatomique et export CSV.
+Le modele ne localise ni C7 ni L5 ni le sommet thoracique : les propositions
+hanches/epaules sont seulement une aide au placement. Le sommet thoracique doit
+etre replace avant calcul. Pisa demande une verticale reelle dans l'image.
+Angle haute : angle externe L5-sommet-C7 ; basse : malleole-L5-C7 (angle total) ;
+Pisa : L5-C7 contre verticale marquee. Seuils 45/30/10 degres, sans diagnostic.
+References : https://pubmed.ncbi.nlm.nih.gov/29907329/ et
+https://pmc.ncbi.nlm.nih.gov/articles/PMC7293065/ .
+Tests : 70 tests numeriques passent ; tests UI locaux Edge 390/1280 px,
+import photo, reperes, angles synthetiques et detection sur photo publique.
+Reference : Vlad Kozh, A man doing Isometric walking, CC0 1.0,
+https://commons.wikimedia.org/wiki/File:A_man_doing_Isometric_walking.jpg .
+Photo conservee uniquement dans tests/artifacts, non publiee dans dist.
+Detection sur cette photo non clinique ne valide pas la precision anatomique.
+Video reelle et Safari iPhone non testes pour ce module. Aucun envoi de media.
+Le workflow ajoute les liens Main/Visage/Posture sur les deux versions.
