@@ -16,8 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Keep the existing analysis release at the main URL.
-          ref: 5261467afcdf75db5f9a3d4196a8c21de98c86a3
+          # Build the hand release with marker amplitude at the main URL.
+          ref: main
           path: stable
       - uses: actions/checkout@v4
         with:
