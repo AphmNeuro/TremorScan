@@ -44,6 +44,7 @@ jobs:
           node preview/scripts/simplify-copy.mjs preview/dist/index.html
           mkdir -p stable/dist/visage
           cp -a preview/dist/. stable/dist/visage/
+          node stable/scripts/add-mode-nav.mjs stable/dist/index.html stable/dist/visage/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
