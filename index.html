@@ -6,13 +6,13 @@
     <meta name="theme-color" content="#eff6f6" />
     <meta
       name="description"
-      content="Estimation expérimentale et locale de la fréquence d’un tremblement à partir d’une vidéo."
+      content="Estimation expÃ©rimentale et locale de la frÃ©quence dâ€™un tremblement Ã  partir dâ€™une vidÃ©o."
     />
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self'; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
     />
-    <title>TremorScan — Analyse vidéo</title>
+    <title>TremorScan â€” Analyse vidÃ©o</title>
     <link rel="stylesheet" href="./style.css" />
     <script type="module" src="./src/app.js"></script>
   </head>
@@ -20,69 +20,70 @@
     <a class="skip" href="#main">Aller au contenu</a>
     <header>
       <a class="brand" href="./"
-        ><span class="brand-icon" aria-hidden="true">∿</span>TremorScan<span
+        ><span class="brand-icon" aria-hidden="true">âˆ¿</span>TremorScan<span
           class="tag"
           >Prototype</span
         ></a
-      ><a href="./docs/methodologie.html">Méthode & limites ↗</a>
+      ><a href="./docs/methodologie.html">MÃ©thode & limites â†—</a>
     </header>
     <main id="main">
       <section class="intro">
         <p class="eyebrow">OBSERVER LE MOUVEMENT</p>
-        <h1>Un mouvement.<br /><em>Une fréquence à explorer.</em></h1>
-        <p class="subtitle">Analyse vidéo de la fréquence des tremblements.</p>
+        <h1>Un mouvement.<br /><em>Une frÃ©quence Ã  explorer.</em></h1>
+        <p class="subtitle">Analyse vidÃ©o de la frÃ©quence des tremblements.</p>
         <p class="local">
-          <span aria-hidden="true">◉</span> Votre vidéo reste sur cet appareil.
+          <span aria-hidden="true">â—‰</span> Votre vidÃ©o reste sur cet appareil.
         </p>
       </section>
       <section class="panel import-panel" aria-labelledby="start-title">
         <div>
-          <p class="eyebrow">01 / VOTRE VIDÉO</p>
-          <h2 id="start-title">Commençons par une main.</h2>
-          <p>Filmez 10 à 20 secondes, avec la main entière bien visible.</p>
+          <p class="eyebrow">01 / VOTRE VIDÃ‰O</p>
+          <h2 id="start-title">CommenÃ§ons par une main.</h2>
+          <p>Filmez 10 Ã  20 secondes, avec la main entiÃ¨re bien visible.</p>
         </div>
         <div class="import-actions">
           <button id="capture" class="primary">
-            Filmer une vidéo <span aria-hidden="true">↗</span></button
-          ><button id="import" class="secondary">Importer une vidéo</button
+            Filmer une vidÃ©o <span aria-hidden="true">â†—</span></button
+          ><button id="import" class="secondary">Importer une vidÃ©o</button
           ><input
             id="camera-file"
             class="sr"
             type="file"
             accept="video/*"
             capture="environment"
-            aria-label="Filmer une vidéo"
+            aria-label="Filmer une vidÃ©o"
           /><input
             id="video-file"
             class="sr"
             type="file"
             accept="video/*,.mov,.mp4,.webm"
-            aria-label="Importer une vidéo"
-          /><small>MP4, MOV ou WebM · selon les codecs du navigateur</small>
+            aria-label="Importer une vidÃ©o"
+          /><small>MP4, MOV ou WebM Â· selon les codecs du navigateur</small>
         </div>
       </section>
       <ol class="instructions">
         <li>
-          <span aria-hidden="true">▣</span>
+          <span aria-hidden="true">â–£</span>
           <div>
-            <strong>Posez le téléphone</strong>
-            <p>Support fixe, sans zoom ni déplacement.</p>
+            <strong>Posez le tÃ©lÃ©phone</strong>
+            <p>Support fixe, sans zoom ni dÃ©placement.</p>
           </div>
         </li>
         <li>
-          <span aria-hidden="true">☀</span>
+          <span aria-hidden="true">â˜€</span>
           <div>
-            <strong>Éclairez la main</strong>
+            <strong>Ã‰clairez la main</strong>
             <p>Fond uni, doigts et poignet visibles.</p>
           </div>
         </li>
         <li>
-          <span aria-hidden="true">◷</span>
+          <span aria-hidden="true">â—·</span>
           <div>
-            <strong>Privilégiez 60 i/s</strong>
-            <p>Vidéo standard, sans ralenti ni montage.</p>
+            <strong>PrivilÃ©giez 60 i/s</strong>
+            <p>VidÃ©o standard, sans ralenti ni montage.</p>
           </div>
         </li>
+        <li><span aria-hidden="true">●</span><div><strong>N’oubliez pas la gommette bleue</strong><p>Ronde, 1 cm de diamètre par défaut, collée sur la main. Gardez-la bien visible et face à l’objectif pour estimer l’amplitude en cm.</p></div></li>
       </ol>
       <div id="message" role="status" aria-live="polite"></div>
       <section id="workspace" class="panel" hidden>
@@ -92,7 +93,7 @@
             <h2>Votre enregistrement</h2>
             <p id="file-info"></p>
           </div>
-          <button id="clear" class="text-button">Effacer la vidéo</button>
+          <button id="clear" class="text-button">Effacer la vidÃ©o</button>
         </div>
         <div class="video-layout">
           <div class="video-stage">
@@ -106,14 +107,14 @@
             ><canvas id="overlay" aria-hidden="true"></canvas>
           </div>
           <div class="analysis-controls">
-            <button id="analyze" class="primary">Analyser la vidéo</button
+            <button id="analyze" class="primary">Analyser la vidÃ©o</button
             ><button id="cancel" class="secondary" hidden>Annuler</button>
             <p>
               Les mains et leurs 21 points anatomiques sont suivis
               automatiquement.
             </p>
             <details>
-              <summary>Paramètres d’analyse</summary>
+              <summary>ParamÃ¨tres dâ€™analyse</summary>
               <div class="band">
                 <label
                   >De (Hz)<input
@@ -124,7 +125,7 @@
                     value="2"
                     step="0.5" /></label
                 ><label
-                  >À (Hz)<input
+                  >Ã€ (Hz)<input
                     id="high"
                     type="number"
                     min="3"
@@ -134,9 +135,9 @@
                 /></label>
               </div>
               <p class="fine">
-                La bande est réduite si la cadence réellement analysée est
-                insuffisante. Les 30 premières secondes au maximum sont
-                traitées.
+                La bande est rÃ©duite si la cadence rÃ©ellement analysÃ©e est
+                insuffisante. Les 30 premiÃ¨res secondes au maximum sont
+                traitÃ©es.
               </p>
             </details>
             <div id="progress-box" hidden>
@@ -144,15 +145,15 @@
                 id="progress"
                 max="1"
                 value="0"
-                aria-label="Progression de l’analyse"
+                aria-label="Progression de lâ€™analyse"
               ></progress>
               <p id="progress-label" role="status"></p>
             </div>
             <p class="fine">
-              La vitesse s’adapte à votre appareil. Gardez cette page ouverte
-              pendant le calcul ; une reprise plus lente peut être nécessaire.
-              Après une première analyse, modifier la bande recalcule uniquement
-              les spectres : les coordonnées sont réutilisées en mémoire.
+              La vitesse sâ€™adapte Ã  votre appareil. Gardez cette page ouverte
+              pendant le calcul ; une reprise plus lente peut Ãªtre nÃ©cessaire.
+              AprÃ¨s une premiÃ¨re analyse, modifier la bande recalcule uniquement
+              les spectres : les coordonnÃ©es sont rÃ©utilisÃ©es en mÃ©moire.
             </p>
           </div>
         </div>
@@ -160,47 +161,47 @@
       <section id="results" hidden aria-labelledby="results-title">
         <div class="section-head">
           <div>
-            <p class="eyebrow">03 / RÉSULTATS</p>
-            <h2 id="results-title">Votre résultat</h2>
+            <p class="eyebrow">03 / RÃ‰SULTATS</p>
+            <h2 id="results-title">Votre rÃ©sultat</h2>
           </div>
           <div class="exports">
             <button id="export-results" class="secondary">
-              Résultats CSV ↓</button
+              RÃ©sultats CSV â†“</button
             ><button id="export-data" class="secondary">
-              Points anatomiques CSV ↓
+              Points anatomiques CSV â†“
             </button>
             
           </div>
         </div>
         <p class="notice">
-          Mesure expérimentale — aucun diagnostic ne peut être établi à partir
-          de ce résultat. Un mouvement de caméra peut imiter un tremblement de
+          Mesure expÃ©rimentale â€” aucun diagnostic ne peut Ãªtre Ã©tabli Ã  partir
+          de ce rÃ©sultat. Un mouvement de camÃ©ra peut imiter un tremblement de
           la main.
         </p>
         <div id="result-cards"></div>
-        <p id="analysis-time" class="fine"></p><details><summary>Qualité de l’enregistrement</summary><p id="sampling" class="fine"></p></details>
+        <p id="analysis-time" class="fine"></p><details><summary>QualitÃ© de lâ€™enregistrement</summary><p id="sampling" class="fine"></p></details>
         <p class="fine">
-          Les points superposés à la vidéo correspondent à l’image analysée la
-          plus proche (écart maximal de 0,1 s).
+          Les points superposÃ©s Ã  la vidÃ©o correspondent Ã  lâ€™image analysÃ©e la
+          plus proche (Ã©cart maximal de 0,1 s).
         </p>
       </section>
       <section class="privacy">
-        <h2>Local, explicite, expérimental.</h2>
+        <h2>Local, explicite, expÃ©rimental.</h2>
         <p>
-          Aucune vidéo ni coordonnée anatomique n’est envoyée à un serveur.
-          Aucun compte, aucune télémétrie. Fermer ou effacer la vidéo libère les
-          données de la session ; seuls les exports que vous téléchargez restent
+          Aucune vidÃ©o ni coordonnÃ©e anatomique nâ€™est envoyÃ©e Ã  un serveur.
+          Aucun compte, aucune tÃ©lÃ©mÃ©trie. Fermer ou effacer la vidÃ©o libÃ¨re les
+          donnÃ©es de la session ; seuls les exports que vous tÃ©lÃ©chargez restent
           sur votre appareil.
         </p>
         <p>
-          Ce prototype n’est pas un dispositif médical diagnostique validé. Le
-          traitement local ne constitue pas une validation réglementaire pour un
+          Ce prototype nâ€™est pas un dispositif mÃ©dical diagnostique validÃ©. Le
+          traitement local ne constitue pas une validation rÃ©glementaire pour un
           usage clinique.
         </p>
       </section>
     </main>
     <footer>
-      <span>TremorScan · v0.3</span
+      <span>TremorScan Â· v0.3</span
       ><a href="./docs/methodologie.html"
         >Comprendre les calculs et leurs limites</a
       >

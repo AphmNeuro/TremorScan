@@ -541,3 +541,8 @@ footer {
     align-items: start;
   }
 }
+
+.amplitude-result {margin-top:24px;padding:20px;border:1px solid var(--line);border-radius:12px;background:rgba(45,130,150,.06)}
+.amplitude-result .eyebrow {margin-bottom:10px}
+.amplitude-result .frequency {font-size:clamp(32px,7vw,54px)}
+.amplitude-result .fine {max-width:560px;margin:8px 0}
