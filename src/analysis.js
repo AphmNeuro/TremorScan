@@ -1,3 +1,4 @@
+import {amplitudeCm} from "./marker.js";
 import { welch, peaks, quantile, detrend, mean } from "./spectrum.js";
 import { extractSignals } from "./tracking.js";
 export function regularize(samples) {
@@ -290,6 +291,7 @@ export function analyzeTracks(tracks, width, height, band, processedCount) {
       const result = aggregate(channels);
       return {
         ...result,
+        amplitudes: amplitudeCm(track.frames.map(f=>({...f,marker:f.marker?{...f.marker,diameter:f.marker.diameter*width}:null})),result.representative,result.frequencies||(result.frequency==null?[]:[result.frequency]),width,height),
         frequencies: result.frequencies || (result.frequency === null ? [] : [result.frequency]),
         id: track.id,
         tracking: track.frames.length / Math.max(1, processedCount),

@@ -157,6 +157,11 @@ function render() {
       f.append(node("small", " Hz")); values.append(f);
     });
     title.append(values);
+    if(true){
+      title.append(node('p',r.amplitudes?.length ? r.amplitudes.map(a=>`${a.frequency.toFixed(1)} Hz : ${a.peakToPeak.toFixed(2)} cm crête à crête`).join(' · ') : 'Amplitude indisponible : gommette bleue ronde de 1 cm nécessaire.','fine'));
+      title.append(node('p','Amplitude projetée du signal représentatif, estimée avec une gommette de 1 cm dans le même plan. Gardez la caméra fixe et la gommette face à l’objectif. Perspective, mouvements de caméra et suivi peuvent modifier cette estimation.','fine'));
+    }
+
     hero.append(title, node("span", data.meta.samplingWarning ? "Acquisition Ã  vÃ©rifier" : r.reliability, "reliability"));
     card.append(hero, node("p", r.reason, "fine"));
     if (frequencies.length === 2) card.append(node("p", "Deux pics ne prouvent pas lâ€™existence de deux tremblements distincts.", "fine"));

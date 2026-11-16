@@ -7,7 +7,7 @@ export class HandTracker {
     this.next = 1;
     this.ambiguous = 0;
   }
-  add(time, hands) {
+  add(time, hands, markers = []) {
     if (
       hands.length === 2 &&
       distance(wrist(hands[0]), wrist(hands[1])) < 0.12
@@ -39,7 +39,9 @@ export class HandTracker {
       }
       t.last = time;
       t.wrist = wrist(landmarks);
-      t.frames.push({ time, landmarks });
+      const xs=landmarks.map(p=>p.x),ys=landmarks.map(p=>p.y);
+      const inside=markers.filter(p=>p.x>=Math.min(...xs)&&p.x<=Math.max(...xs)&&p.y>=Math.min(...ys)&&p.y<=Math.max(...ys));
+      t.frames.push({ time, landmarks, marker:inside.length===1?inside[0]:null });
       return { id: t.id, landmarks };
     });
   }

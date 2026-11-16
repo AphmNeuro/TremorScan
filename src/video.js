@@ -239,7 +239,7 @@ export class VideoSession {
           }
           this.processed++;
           this.times.push(data.time);
-          const hands = this.tracker.add(data.time, data.hands);
+          const hands = this.tracker.add(data.time, data.hands, data.markers);
           this.frames.push({ time: data.time, hands });
           // A bounded pipeline avoids stop/start for every frame. Resume when
           // the detector has drained the queue; never retain more than 3 bitmaps.

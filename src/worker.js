@@ -1,6 +1,7 @@
+import {blueMarkers} from "./marker.js";
 import { HandLandmarker, FilesetResolver } from "../vendor/vision_bundle.mjs";
 import { analyzeTracks } from "./analysis.js";
-let detector;
+let detector, markerCanvas, markerContext;
 self.onmessage = async ({ data }) => {
   try {
     if (data.type === "init") {
@@ -35,10 +36,19 @@ self.onmessage = async ({ data }) => {
       self.postMessage({ type: "ready", backend: options.baseOptions.delegate });
     } else if (data.type === "frame") {
       try {
+        let markers=[];
+        if(true){
+          markerCanvas ||= new OffscreenCanvas(data.bitmap.width,data.bitmap.height);
+          if(markerCanvas.width!==data.bitmap.width||markerCanvas.height!==data.bitmap.height){markerCanvas.width=data.bitmap.width;markerCanvas.height=data.bitmap.height;}
+          markerContext ||= markerCanvas.getContext('2d',{willReadFrequently:true});
+          markerContext.drawImage(data.bitmap,0,0);
+          markers=blueMarkers(markerContext.getImageData(0,0,markerCanvas.width,markerCanvas.height));
+        }
         const result = detector.detectForVideo(data.bitmap, data.time * 1000);
         self.postMessage({
           type: "frame",
           time: data.time,
+          markers: markers.map(p=>({x:p.x/data.bitmap.width,y:p.y/data.bitmap.height,diameter:p.diameter/data.bitmap.width})),
           hands: result.landmarks,
         });
       } finally {
